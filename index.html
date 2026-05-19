@@ -148,11 +148,16 @@
             <div class="flex-1 overflow-y-auto p-4 sm:p-8 w-full" id="main-scroll-area">
                 <div class="max-w-7xl mx-auto">
                     <!-- Section Title -->
-                    <div class="mb-6 flex justify-between items-end">
+                    <div class="mb-4 flex justify-between items-end">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-800" id="current-category-title">Todos os Itens</h2>
                             <p class="text-sm text-slate-500 mt-1" id="results-count">Carregando...</p>
                         </div>
+                    </div>
+
+                    <!-- Subcategory Filters -->
+                    <div id="subcategoryFilters" class="flex overflow-x-auto gap-2 mb-6 hide-scrollbar hidden pb-2">
+                        <!-- Chips serão injetados aqui -->
                     </div>
 
                     <!-- Grid for Items -->
@@ -242,6 +247,7 @@
                 <label class="block text-sm font-medium text-slate-700 mb-2">Cole o texto estruturado aqui:</label>
                 <textarea id="importTextarea" rows="12" class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-700 transition-all outline-none font-mono text-sm shadow-inner resize-y" placeholder="===
 Categoria: Doença
+Subcategoria: Cardiologia
 Nome: Hipertensão Arterial
 Tags: cardio, pressao, cronica
 Imagem: 
@@ -249,8 +255,9 @@ Descrição: Aumento persistente da pressão arterial.
 Sintomas comuns: Dor de cabeça, tontura...
 ===
 Categoria: Fármaco
+Subcategoria: Anti-hipertensivo
 Nome: Losartana 50mg
-Tags: anti-hipertensivo, bra
+Tags: bra
 Imagem: 
 Descrição: Posologia: 1 cp VO 12/12h.
 ==="></textarea>
@@ -298,11 +305,17 @@ Descrição: Posologia: 1 cp VO 12/12h.
                             </select>
                         </div>
 
-                        <!-- Name -->
+                        <!-- Subcategory -->
                         <div class="space-y-1.5">
-                            <label class="block text-sm font-medium text-slate-700">Nome / Título <span class="text-red-500">*</span></label>
-                            <input type="text" id="itemName" required placeholder="Ex: Anamnese Pediátrica, Dipirona..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                            <label class="block text-sm font-medium text-slate-700">Subcategoria <span class="text-xs text-slate-400 font-normal">(Opcional)</span></label>
+                            <input type="text" id="itemSubcategory" placeholder="Ex: Cardiologia, Pediatria..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
                         </div>
+                    </div>
+
+                    <!-- Name -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium text-slate-700">Nome / Título <span class="text-red-500">*</span></label>
+                        <input type="text" id="itemName" required placeholder="Ex: Anamnese Pediátrica, Dipirona..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
                     </div>
 
                     <!-- Keywords -->
@@ -357,14 +370,20 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 <img id="viewImage" src="" alt="Capa" class="w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div class="absolute bottom-4 left-6 right-6">
-                    <span id="viewCategoryBadgeImg" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold mb-2 bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span id="viewCategoryBadgeImg" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
+                        <span id="viewSubcategoryBadgeImg" class="hidden items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
+                    </div>
                     <h2 id="viewTitleImg" class="text-2xl sm:text-3xl font-bold text-white drop-shadow-md"></h2>
                 </div>
             </div>
 
             <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/50" id="viewHeaderNoImg">
                 <div>
-                    <span id="viewCategoryBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold mb-2"></span>
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span id="viewCategoryBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border"></span>
+                        <span id="viewSubcategoryBadge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border bg-white text-slate-500 border-slate-200 shadow-sm"></span>
+                    </div>
                     <h2 id="viewTitle" class="text-xl sm:text-2xl font-bold text-slate-800"></h2>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0 ml-4">
@@ -439,6 +458,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
         // --- STATE MANAGEMENT ---
         let items = [];
         let currentFilter = 'all';
+        let currentSubcategory = 'all';
         let currentSearch = '';
         let currentViewedItem = null;
         let editingItemId = null; // Variável para controlar edição
@@ -448,6 +468,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             {
                 id: 'init-1',
                 type: 'template',
+                subcategory: 'Clínica Médica',
                 name: 'Anamnese Padrão Completa',
                 description: `QUEIXA PRINCIPAL (QP):\n"..."\n\nHISTÓRIA DA MOLÉSTIA ATUAL (HMA):\nInício:\nDuração:\nFrequência:\nCaracterísticas (Tipo de dor, irradiação, intensidade):\nFatores de Melhora/Piora:\nSintomas associados:\n\nHISTÓRIA MÉDICA PREGRESSA (HMP):\nDoenças prévias (HAS, DM...):\nCirurgias prévias:\nAlergias:\nUso contínuo de medicações:\n\nHISTÓRIA FAMILIAR (HF):\nDoenças na família:\n\nHÁBITOS DE VIDA (HV):\nTabagismo:\nEtilismo:\nAtividade Física:\nAlimentação:`,
                 imageUrl: '',
@@ -456,6 +477,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             {
                 id: 'init-2',
                 type: 'drug',
+                subcategory: 'Analgesia',
                 name: 'Dipirona Sódica',
                 description: `Indicação: Analgésico e antitérmico.\n                \nPosologia Adulto: \n- Comprimido 500mg a 1g, via oral, de 6/6h.\n- Solução oral (gotas 500mg/mL): 20 a 40 gotas, de 6/6h.\n\nPosologia Pediátrica:\n- 1 gota (500mg/mL) por kg de peso corporal, até 4x ao dia (máximo 40 gotas/dose).\n\nContraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
                 imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400&h=300',
@@ -464,6 +486,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             {
                 id: 'init-3',
                 type: 'term',
+                subcategory: 'Gastroenterologia',
                 name: 'Sinal de Blumberg',
                 description: `Definição: \nDescompressão brusca dolorosa da parede abdominal.\n\nPesquisa:\nComprime-se lentamente e profundamente a parede abdominal com as mãos (geralmente na fossa ilíaca direita, ponto de McBurney) e, em seguida, retira-se a mão subitamente.\n\nSignificado Clínico:\nIndica irritação peritoneal. É um sinal clássico, porém não patognomônico, de apendicite aguda quando presente na fossa ilíaca direita.`,
                 imageUrl: '',
@@ -472,6 +495,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             {
                 id: 'init-4',
                 type: 'exam',
+                subcategory: 'Ortopedia',
                 name: 'Manobra de Lasègue',
                 description: `Execução: \nCom o paciente em decúbito dorsal, o examinador eleva passivamente o membro inferior estendido do paciente.\n\nInterpretação:\nO sinal é positivo quando ocorre dor irradiada no trajeto do nervo ciático (glúteo, face posterior da coxa e perna) antes dos 70 graus de elevação.\n\nSignificado:\nIndica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérnia de disco.`,
                 imageUrl: '',
@@ -480,6 +504,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             {
                 id: 'init-5',
                 type: 'disease',
+                subcategory: 'Cardiologia',
                 name: 'Hipertensão Arterial Sistêmica (HAS)',
                 description: `Diagnóstico:\nPA sistólica ≥ 140 mmHg e/ou PA diastólica ≥ 90 mmHg, medida em consultório, em pelo menos duas ocasiões diferentes.\n\nClassificação (SBC):\n- Pré-hipertensão: 130-139 / 85-89\n- HAS Estágio 1: 140-159 / 90-99\n- HAS Estágio 2: 160-179 / 100-109\n- HAS Estágio 3: ≥ 180 / ≥ 110\n\nManejo Inicial:\nMudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farmacológica dependendo do risco cardiovascular e estágio.`,
                 imageUrl: '',
@@ -517,7 +542,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             }
         }
 
-        function getFilteredItems() {
+        function getBaseFilteredItems() {
             return items.filter(item => {
                 const matchesCategory = currentFilter === 'all' || item.type === currentFilter;
                 
@@ -528,13 +553,64 @@ Descrição: Posologia: 1 cp VO 12/12h.
                                       item.name.toLowerCase().includes(searchLower) || 
                                       item.description.toLowerCase().includes(searchLower) ||
                                       CATEGORIES[item.type]?.label.toLowerCase().includes(searchLower) ||
+                                      (item.subcategory && item.subcategory.toLowerCase().includes(searchLower)) ||
                                       hasKeywordMatch;
                 
                 return matchesCategory && matchesSearch;
-            }).sort((a, b) => b.id.localeCompare(a.id)); // Newest first based on ID timestamp (if generated properly)
+            });
+        }
+
+        function getFilteredItems() {
+            const base = getBaseFilteredItems();
+            return base.filter(item => {
+                const matchesSubcategory = currentSubcategory === 'all' || 
+                                           (item.subcategory && item.subcategory.trim() === currentSubcategory);
+                return matchesSubcategory;
+            }).sort((a, b) => b.id.localeCompare(a.id)); 
+        }
+
+        function renderSubcategoryFilters() {
+            const container = document.getElementById('subcategoryFilters');
+            const baseFiltered = getBaseFilteredItems();
+            
+            const subs = new Set();
+            baseFiltered.forEach(i => {
+                if (i.subcategory && i.subcategory.trim() !== '') {
+                    subs.add(i.subcategory.trim());
+                }
+            });
+
+            const uniqueSubs = Array.from(subs).sort();
+
+            if (uniqueSubs.length === 0) {
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            
+            let html = `<button onclick="filterSubcategory('all')" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${currentSubcategory === 'all' ? 'bg-clinical-600 text-white border-clinical-600 shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}">Todas</button>`;
+
+            uniqueSubs.forEach(sub => {
+                const isActive = currentSubcategory === sub;
+                const btnClass = isActive 
+                    ? 'bg-clinical-600 text-white border-clinical-600 shadow-sm' 
+                    : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50';
+                html += `<button onclick="filterSubcategory('${sub}')" class="whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${btnClass}">${sub}</button>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function filterSubcategory(sub) {
+            currentSubcategory = sub;
+            renderItems();
         }
 
         function renderItems() {
+            renderSubcategoryFilters();
+
             const grid = document.getElementById('itemsGrid');
             const emptyState = document.getElementById('emptyState');
             const filtered = getFilteredItems();
@@ -592,6 +668,10 @@ Descrição: Posologia: 1 cp VO 12/12h.
                          <i class="ph ph-eye"></i> Visualizar
                        </button>`;
 
+                const subcatHTML = item.subcategory 
+                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border bg-slate-50 text-slate-500 border-slate-200"><i class="ph ph-tag"></i> ${item.subcategory}</span>` 
+                    : '';
+
                 return `
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer group relative" onclick="viewItem('${item.id}')">
                         <button onclick="editItem('${item.id}', event)" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-slate-500 hover:text-clinical-600 p-2 rounded-lg transition-all shadow-sm backdrop-blur-sm border border-slate-200/50 z-10 opacity-0 group-hover:opacity-100 focus:opacity-100" title="Editar">
@@ -599,10 +679,11 @@ Descrição: Posologia: 1 cp VO 12/12h.
                         </button>
                         ${mediaHTML}
                         <div class="p-5 flex-1 flex flex-col">
-                            <div class="mb-3">
+                            <div class="mb-3 flex flex-wrap gap-2 items-center">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${badgeColorClass}">
                                     <i class="ph ${cat.icon}"></i> ${cat.label}
                                 </span>
+                                ${subcatHTML}
                             </div>
                             <h3 class="font-bold text-slate-800 text-lg mb-2 leading-tight group-hover:text-clinical-600 transition-colors">${item.name}</h3>
                             <p class="text-sm text-slate-500 line-clamp-3 mb-4 flex-1 whitespace-pre-wrap font-mono text-xs">${item.description}</p>
@@ -622,6 +703,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
 
         function filterCategory(category) {
             currentFilter = category;
+            currentSubcategory = 'all'; // Reseta o filtro de subcategoria ao trocar de categoria principal
             
             // Update Title
             const titles = {
@@ -767,6 +849,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
 
                 const nome = nomeMatch[1].trim();
                 const catMatch = block.match(/Categoria:\s*(.*)/i);
+                const subcatMatch = block.match(/Subcategoria:\s*(.*)/i);
                 const imgMatch = block.match(/Imagem:\s*(.*)/i);
                 const tagsMatch = block.match(/Tags:\s*(.*)/i);
                 const descIndex = block.toLowerCase().indexOf('descrição:');
@@ -777,6 +860,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
                     tipo = catMap[parsedCat] || 'other';
                 }
 
+                const subcategoria = subcatMatch && subcatMatch[1] ? subcatMatch[1].trim() : '';
                 const imagem = imgMatch && imgMatch[1] ? imgMatch[1].trim() : '';
                 const tags = tagsMatch && tagsMatch[1] ? tagsMatch[1].trim() : '';
                 const keywordsArray = tags ? tags.split(',').map(k => k.trim()).filter(k => k !== '') : [];
@@ -790,6 +874,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 items.unshift({
                     id: 'item_' + Date.now() + Math.random().toString(36).substr(2, 5),
                     type: tipo,
+                    subcategory: subcategoria,
                     name: nome,
                     description: descricao,
                     imageUrl: imagem,
@@ -813,6 +898,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             e.preventDefault();
             
             const category = document.getElementById('itemCategory').value;
+            const subcategory = document.getElementById('itemSubcategory').value;
             const name = document.getElementById('itemName').value;
             const description = document.getElementById('itemDescription').value;
             const imageUrl = document.getElementById('itemImageUrl').value;
@@ -834,6 +920,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
                     items[index] = {
                         ...items[index],
                         type: category,
+                        subcategory: subcategory,
                         name: name,
                         description: description,
                         imageUrl: imageUrl || '',
@@ -847,6 +934,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 const newItem = {
                     id: 'item_' + Date.now(),
                     type: category,
+                    subcategory: subcategory,
                     name: name,
                     description: description,
                     imageUrl: imageUrl || '',
@@ -874,6 +962,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
             
             // Preenche o formulário com os dados
             document.getElementById('itemCategory').value = item.type;
+            document.getElementById('itemSubcategory').value = item.subcategory || '';
             document.getElementById('itemName').value = item.name;
             document.getElementById('itemKeywords').value = item.keywords ? item.keywords.join(', ') : '';
             document.getElementById('itemDescription').value = item.description;
@@ -911,6 +1000,9 @@ Descrição: Posologia: 1 cp VO 12/12h.
             document.getElementById('viewHeaderNoImg').classList.remove('hidden');
             document.getElementById('actionBtnsImg').classList.add('hidden');
 
+            const viewSubcategoryBadge = document.getElementById('viewSubcategoryBadge');
+            const viewSubcategoryBadgeImg = document.getElementById('viewSubcategoryBadgeImg');
+
             if (item.imageUrl && item.imageUrl.trim() !== '') {
                 // Setup layout with image
                 document.getElementById('viewImageContainer').classList.remove('hidden');
@@ -924,12 +1016,31 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 document.getElementById('viewTitleImg').textContent = item.name;
                 const badgeImg = document.getElementById('viewCategoryBadgeImg');
                 badgeImg.innerHTML = badgeHTML;
+
+                if(item.subcategory) {
+                    viewSubcategoryBadgeImg.innerHTML = `<i class="ph ph-tag"></i> ${item.subcategory}`;
+                    viewSubcategoryBadgeImg.classList.remove('hidden');
+                    viewSubcategoryBadgeImg.classList.add('inline-flex');
+                } else {
+                    viewSubcategoryBadgeImg.classList.add('hidden');
+                    viewSubcategoryBadgeImg.classList.remove('inline-flex');
+                }
+
             } else {
                 // Setup layout without image
                 document.getElementById('viewTitle').textContent = item.name;
                 const badge = document.getElementById('viewCategoryBadge');
                 badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold mb-2 border ${badgeColorClass}`;
                 badge.innerHTML = badgeHTML;
+
+                if(item.subcategory) {
+                    viewSubcategoryBadge.innerHTML = `<i class="ph ph-tag"></i> ${item.subcategory}`;
+                    viewSubcategoryBadge.classList.remove('hidden');
+                    viewSubcategoryBadge.classList.add('inline-flex');
+                } else {
+                    viewSubcategoryBadge.classList.add('hidden');
+                    viewSubcategoryBadge.classList.remove('inline-flex');
+                }
             }
 
             // Exibir Palavras-chave
