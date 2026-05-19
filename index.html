@@ -128,7 +128,7 @@
                 </div>
 
                 <!-- Add Button (Desktop) -->
-                <button onclick="openModal('addModal')" class="hidden sm:flex whitespace-nowrap items-center gap-2 bg-clinical-600 hover:bg-clinical-700 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                <button onclick="openModal('chooseActionModal')" class="hidden sm:flex whitespace-nowrap items-center gap-2 bg-clinical-600 hover:bg-clinical-700 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                     <i class="ph ph-plus-circle text-lg"></i>
                     Novo Item
                 </button>
@@ -172,7 +172,7 @@
             </div>
 
             <!-- Mobile FAB (Floating Action Button) -->
-            <button onclick="openModal('addModal')" class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-clinical-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-clinical-700 active:scale-95 transition-all z-40">
+            <button onclick="openModal('chooseActionModal')" class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-clinical-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-clinical-700 active:scale-95 transition-all z-40">
                 <i class="ph ph-plus text-2xl"></i>
             </button>
         </main>
@@ -180,6 +180,90 @@
 
     <!-- Modal Backdrop -->
     <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+
+    <!-- Modal: Escolha de Ação (Criar ou Importar) -->
+    <div id="chooseActionModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden pointer-events-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="text-xl font-bold text-slate-800">Adicionar Conteúdo</h2>
+                    <button onclick="closeModal('chooseActionModal')" class="text-slate-400 hover:text-slate-600 p-1">
+                        <i class="ph ph-x text-lg"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-slate-500 mb-6">Como deseja adicionar novos itens ao MedQuick?</p>
+                
+                <div class="space-y-3">
+                    <button onclick="startManualCreation()" class="w-full flex items-center p-4 border border-slate-200 rounded-xl hover:border-clinical-500 hover:bg-clinical-50 transition-colors group text-left">
+                        <div class="bg-clinical-100 text-clinical-600 w-10 h-10 rounded-lg flex items-center justify-center mr-4 group-hover:bg-clinical-500 group-hover:text-white transition-colors">
+                            <i class="ph ph-pencil-simple text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-slate-800">Criar Manualmente</h3>
+                            <p class="text-xs text-slate-500">Preencher o formulário para 1 item</p>
+                        </div>
+                    </button>
+
+                    <button onclick="startImportProcess()" class="w-full flex items-center p-4 border border-slate-200 rounded-xl hover:border-emerald-500 hover:bg-emerald-50 transition-colors group text-left">
+                        <div class="bg-emerald-100 text-emerald-600 w-10 h-10 rounded-lg flex items-center justify-center mr-4 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                            <i class="ph ph-clipboard-text text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-slate-800">Importar em Massa</h3>
+                            <p class="text-xs text-slate-500">Colar texto estruturado com vários itens</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Importação em Massa -->
+    <div id="importModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="ph ph-clipboard-text text-emerald-600"></i> Importar Itens
+                </h3>
+                <button onclick="closeModal('importModal')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <div class="bg-clinical-50 border border-clinical-100 rounded-lg p-4 mb-4 text-sm text-clinical-800 flex gap-3">
+                    <i class="ph ph-info text-xl mt-0.5"></i>
+                    <div>
+                        <p class="font-semibold mb-1">Como usar a importação:</p>
+                        <p>Cole o seu texto abaixo. O sistema separa cada item usando <code class="bg-white px-1.5 py-0.5 rounded border border-clinical-200 font-bold">===</code> numa linha própria.</p>
+                    </div>
+                </div>
+
+                <label class="block text-sm font-medium text-slate-700 mb-2">Cole o texto estruturado aqui:</label>
+                <textarea id="importTextarea" rows="12" class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-700 transition-all outline-none font-mono text-sm shadow-inner resize-y" placeholder="===
+Categoria: Doença
+Nome: Hipertensão Arterial
+Tags: cardio, pressao, cronica
+Imagem: 
+Descrição: Aumento persistente da pressão arterial.
+Sintomas comuns: Dor de cabeça, tontura...
+===
+Categoria: Fármaco
+Nome: Losartana 50mg
+Tags: anti-hipertensivo, bra
+Imagem: 
+Descrição: Posologia: 1 cp VO 12/12h.
+==="></textarea>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" onclick="closeModal('importModal')" class="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-200 transition-colors">Cancelar</button>
+                <button type="button" onclick="processImport()" class="px-5 py-2.5 rounded-xl font-medium text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all flex items-center gap-2">
+                    <i class="ph ph-check"></i> Processar Importação
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: Adicionar Novo Item -->
     <div id="addModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
@@ -365,31 +449,7 @@
                 id: 'init-1',
                 type: 'template',
                 name: 'Anamnese Padrão Completa',
-                description: `QUEIXA PRINCIPAL (QP):
-"..."
-
-HISTÓRIA DA MOLÉSTIA ATUAL (HMA):
-Início:
-Duração:
-Frequência:
-Características (Tipo de dor, irradiação, intensidade):
-Fatores de Melhora/Piora:
-Sintomas associados:
-
-HISTÓRIA MÉDICA PREGRESSA (HMP):
-Doenças prévias (HAS, DM...):
-Cirurgias prévias:
-Alergias:
-Uso contínuo de medicações:
-
-HISTÓRIA FAMILIAR (HF):
-Doenças na família:
-
-HÁBITOS DE VIDA (HV):
-Tabagismo:
-Etilismo:
-Atividade Física:
-Alimentação:`,
+                description: `QUEIXA PRINCIPAL (QP):\n"..."\n\nHISTÓRIA DA MOLÉSTIA ATUAL (HMA):\nInício:\nDuração:\nFrequência:\nCaracterísticas (Tipo de dor, irradiação, intensidade):\nFatores de Melhora/Piora:\nSintomas associados:\n\nHISTÓRIA MÉDICA PREGRESSA (HMP):\nDoenças prévias (HAS, DM...):\nCirurgias prévias:\nAlergias:\nUso contínuo de medicações:\n\nHISTÓRIA FAMILIAR (HF):\nDoenças na família:\n\nHÁBITOS DE VIDA (HV):\nTabagismo:\nEtilismo:\nAtividade Física:\nAlimentação:`,
                 imageUrl: '',
                 keywords: ['geral', 'adulto', 'padrão', 'completa']
             },
@@ -397,16 +457,7 @@ Alimentação:`,
                 id: 'init-2',
                 type: 'drug',
                 name: 'Dipirona Sódica',
-                description: `Indicação: Analgésico e antitérmico.
-                
-Posologia Adulto: 
-- Comprimido 500mg a 1g, via oral, de 6/6h.
-- Solução oral (gotas 500mg/mL): 20 a 40 gotas, de 6/6h.
-
-Posologia Pediátrica:
-- 1 gota (500mg/mL) por kg de peso corporal, até 4x ao dia (máximo 40 gotas/dose).
-
-Contraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
+                description: `Indicação: Analgésico e antitérmico.\n                \nPosologia Adulto: \n- Comprimido 500mg a 1g, via oral, de 6/6h.\n- Solução oral (gotas 500mg/mL): 20 a 40 gotas, de 6/6h.\n\nPosologia Pediátrica:\n- 1 gota (500mg/mL) por kg de peso corporal, até 4x ao dia (máximo 40 gotas/dose).\n\nContraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
                 imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400&h=300',
                 keywords: ['analgésico', 'antitérmico', 'dor', 'febre', 'pediatria']
             },
@@ -414,14 +465,7 @@ Contraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
                 id: 'init-3',
                 type: 'term',
                 name: 'Sinal de Blumberg',
-                description: `Definição: 
-Descompressão brusca dolorosa da parede abdominal.
-
-Pesquisa:
-Comprime-se lentamente e profundamente a parede abdominal com as mãos (geralmente na fossa ilíaca direita, ponto de McBurney) e, em seguida, retira-se a mão subitamente.
-
-Significado Clínico:
-Indica irritação peritoneal. É um sinal clássico, porém não patognomônico, de apendicite aguda quando presente na fossa ilíaca direita.`,
+                description: `Definição: \nDescompressão brusca dolorosa da parede abdominal.\n\nPesquisa:\nComprime-se lentamente e profundamente a parede abdominal com as mãos (geralmente na fossa ilíaca direita, ponto de McBurney) e, em seguida, retira-se a mão subitamente.\n\nSignificado Clínico:\nIndica irritação peritoneal. É um sinal clássico, porém não patognomônico, de apendicite aguda quando presente na fossa ilíaca direita.`,
                 imageUrl: '',
                 keywords: ['abdome', 'apendicite', 'peritonite', 'sinal']
             },
@@ -429,14 +473,7 @@ Indica irritação peritoneal. É um sinal clássico, porém não patognomônico
                 id: 'init-4',
                 type: 'exam',
                 name: 'Manobra de Lasègue',
-                description: `Execução: 
-Com o paciente em decúbito dorsal, o examinador eleva passivamente o membro inferior estendido do paciente.
-
-Interpretação:
-O sinal é positivo quando ocorre dor irradiada no trajeto do nervo ciático (glúteo, face posterior da coxa e perna) antes dos 70 graus de elevação.
-
-Significado:
-Indica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérnia de disco.`,
+                description: `Execução: \nCom o paciente em decúbito dorsal, o examinador eleva passivamente o membro inferior estendido do paciente.\n\nInterpretação:\nO sinal é positivo quando ocorre dor irradiada no trajeto do nervo ciático (glúteo, face posterior da coxa e perna) antes dos 70 graus de elevação.\n\nSignificado:\nIndica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérnia de disco.`,
                 imageUrl: '',
                 keywords: ['neurológico', 'ciático', 'lombalgia', 'ortopedia', 'dor']
             },
@@ -444,17 +481,7 @@ Indica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérn
                 id: 'init-5',
                 type: 'disease',
                 name: 'Hipertensão Arterial Sistêmica (HAS)',
-                description: `Diagnóstico:
-PA sistólica ≥ 140 mmHg e/ou PA diastólica ≥ 90 mmHg, medida em consultório, em pelo menos duas ocasiões diferentes.
-
-Classificação (SBC):
-- Pré-hipertensão: 130-139 / 85-89
-- HAS Estágio 1: 140-159 / 90-99
-- HAS Estágio 2: 160-179 / 100-109
-- HAS Estágio 3: ≥ 180 / ≥ 110
-
-Manejo Inicial:
-Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farmacológica dependendo do risco cardiovascular e estágio.`,
+                description: `Diagnóstico:\nPA sistólica ≥ 140 mmHg e/ou PA diastólica ≥ 90 mmHg, medida em consultório, em pelo menos duas ocasiões diferentes.\n\nClassificação (SBC):\n- Pré-hipertensão: 130-139 / 85-89\n- HAS Estágio 1: 140-159 / 90-99\n- HAS Estágio 2: 160-179 / 100-109\n- HAS Estágio 3: ≥ 180 / ≥ 110\n\nManejo Inicial:\nMudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farmacológica dependendo do risco cardiovascular e estágio.`,
                 imageUrl: '',
                 keywords: ['cardio', 'pressão alta', 'crônica', 'risco']
             }
@@ -463,7 +490,6 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
         function initApp() {
             loadData();
             renderItems();
-            updateUI();
         }
 
         function loadData() {
@@ -676,9 +702,6 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
             modal.classList.remove('opacity-100', 'translate-y-0');
             modal.classList.add('opacity-0', 'translate-y-4');
             
-            // Hide backdrop
-            backdrop.classList.add('opacity-0');
-
             // Wait for transition to finish before hiding display
             setTimeout(() => {
                 modal.classList.add('hidden');
@@ -686,7 +709,10 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
                 
                 // Only hide backdrop if no other modal is open
                 if (document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)').length === 0) {
-                     backdrop.classList.add('hidden');
+                     backdrop.classList.add('opacity-0');
+                     setTimeout(() => {
+                         backdrop.classList.add('hidden');
+                     }, 300);
                      document.body.classList.remove('modal-open');
                 }
                 
@@ -698,6 +724,89 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
                     currentViewedItem = null;
                 }
             }, 300);
+        }
+
+        // Funções da Importação
+        function startManualCreation() {
+            closeModal('chooseActionModal');
+            setTimeout(() => {
+                openModal('addModal');
+            }, 300);
+        }
+
+        function startImportProcess() {
+            closeModal('chooseActionModal');
+            setTimeout(() => {
+                document.getElementById('importTextarea').value = '';
+                openModal('importModal');
+            }, 300);
+        }
+
+        function processImport() {
+            const text = document.getElementById('importTextarea').value;
+            if (!text.trim()) {
+                showToast('Por favor, cole o texto para importar.', 'error');
+                return;
+            }
+
+            const blocks = text.split('===').filter(b => b.trim() !== '');
+            let importedCount = 0;
+
+            const catMap = {
+                'anamnese': 'template', 'modelo': 'template', 'modelos': 'template', 'template': 'template',
+                'farmaco': 'drug', 'fármaco': 'drug', 'remedio': 'drug', 'remédio': 'drug', 'medicamento': 'drug', 'drug': 'drug',
+                'termo': 'term', 'termos': 'term', 'termo médico': 'term', 'termo medico': 'term', 'term': 'term',
+                'exame': 'exam', 'exame físico': 'exam', 'exame fisico': 'exam', 'exam': 'exam',
+                'doenca': 'disease', 'doença': 'disease', 'doenças': 'disease', 'disease': 'disease',
+                'outro': 'other', 'outros': 'other', 'other': 'other'
+            };
+
+            blocks.forEach(block => {
+                const nomeMatch = block.match(/Nome:\s*(.*)/i);
+                if (!nomeMatch || !nomeMatch[1].trim()) return;
+
+                const nome = nomeMatch[1].trim();
+                const catMatch = block.match(/Categoria:\s*(.*)/i);
+                const imgMatch = block.match(/Imagem:\s*(.*)/i);
+                const tagsMatch = block.match(/Tags:\s*(.*)/i);
+                const descIndex = block.toLowerCase().indexOf('descrição:');
+
+                let tipo = 'other';
+                if (catMatch && catMatch[1]) {
+                    const parsedCat = catMatch[1].trim().toLowerCase();
+                    tipo = catMap[parsedCat] || 'other';
+                }
+
+                const imagem = imgMatch && imgMatch[1] ? imgMatch[1].trim() : '';
+                const tags = tagsMatch && tagsMatch[1] ? tagsMatch[1].trim() : '';
+                const keywordsArray = tags ? tags.split(',').map(k => k.trim()).filter(k => k !== '') : [];
+                
+                let descricao = '';
+                if (descIndex !== -1) {
+                    descricao = block.substring(descIndex + 10).trim();
+                    descricao = descricao.replace(/^[\r\n]+/, ''); // Remove quebras vazias no início
+                }
+
+                items.unshift({
+                    id: 'item_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                    type: tipo,
+                    name: nome,
+                    description: descricao,
+                    imageUrl: imagem,
+                    keywords: keywordsArray
+                });
+                importedCount++;
+            });
+
+            if (importedCount > 0) {
+                saveData();
+                renderItems();
+                closeModal('importModal');
+                showToast(`${importedCount} itens importados com sucesso!`, 'success');
+                filterCategory(currentFilter); // Re-aplica filtro para atualizar lista
+            } else {
+                showToast('Formato inválido. Siga o modelo estruturado com ===.', 'error');
+            }
         }
 
         function handleFormSubmit(e) {
@@ -743,7 +852,7 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
                     imageUrl: imageUrl || '',
                     keywords: keywordsArray
                 };
-                items.push(newItem);
+                items.unshift(newItem); // Adiciona ao topo
                 showToast("Item salvo com sucesso!", "success");
             }
 
@@ -842,18 +951,16 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
         }
 
         function deleteItem(id) {
-            // Using custom UI replacement for confirm()
-            // Simulating a quick confirmation here for brevity, usually we'd make a tiny modal.
-            // Since alert/confirm are forbidden, we will delete directly but show a toast with an "Undo" option would be best. 
-            // For simplicity in single file, we will remove and close modal.
-            
-            const itemIndex = items.findIndex(i => i.id === id);
-            if (itemIndex > -1) {
-                items.splice(itemIndex, 1);
-                saveData();
-                renderItems();
-                closeModal('viewModal');
-                showToast("Item excluído com sucesso.", "success");
+            // Confirm explicitly via standard window confirm for simplicity & stability here
+            if (confirm("Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.")) {
+                const itemIndex = items.findIndex(i => i.id === id);
+                if (itemIndex > -1) {
+                    items.splice(itemIndex, 1);
+                    saveData();
+                    renderItems();
+                    closeModal('viewModal');
+                    showToast("Item excluído com sucesso.", "success");
+                }
             }
         }
 
@@ -885,20 +992,15 @@ Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farm
         // Robust copy function avoiding navigator.clipboard restrictions in iframes
         function fallbackCopyTextToClipboard(text) {
             var textArea = document.createElement("textarea");
-            // Place in top-left corner of screen regardless of scroll position.
             textArea.style.position = 'fixed';
             textArea.style.top = 0;
             textArea.style.left = 0;
-            // Ensure it has a small width and height. Setting to 1px / 1em doesn't work as this gives a negative w/h on some browsers.
             textArea.style.width = '2em';
             textArea.style.height = '2em';
-            // We don't need padding, reducing the size if it does flash render.
             textArea.style.padding = 0;
-            // Clean up any borders.
             textArea.style.border = 'none';
             textArea.style.outline = 'none';
             textArea.style.boxShadow = 'none';
-            // Avoid flash of white box if rendered for any reason.
             textArea.style.background = 'transparent';
             textArea.value = text;
 
