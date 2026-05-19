@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedQuick - Acesso Clínico Rápido</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        clinical: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Scrollbar for better clinical aesthetic */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        
+        /* Smooth transitions */
+        .modal-transition {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Line clamp for descriptions */
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
+
+        /* Prevent body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Sidebar (Desktop) / Bottom Nav (Mobile - adapted via CSS) -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-sm z-10">
+            <div class="p-6 flex items-center gap-3 text-clinical-600">
+                <i class="ph-fill ph-stethoscope text-3xl"></i>
+                <h1 class="text-xl font-bold tracking-tight">MedQuick</h1>
+            </div>
+            
+            <nav class="flex-1 px-4 space-y-2 mt-4 overflow-y-auto" id="sidebar-nav">
+                <button onclick="filterCategory('all')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium bg-clinical-50 text-clinical-700 transition-colors" data-category="all">
+                    <i class="ph ph-squares-four text-xl"></i> Todos os Itens
+                </button>
+                <button onclick="filterCategory('template')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="template">
+                    <i class="ph ph-file-text text-xl"></i> Anamnese
+                </button>
+                <button onclick="filterCategory('drug')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="drug">
+                    <i class="ph ph-pill text-xl"></i> Fármacos
+                </button>
+                <button onclick="filterCategory('term')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="term">
+                    <i class="ph ph-book-bookmark text-xl"></i> Termos Médicos
+                </button>
+                <button onclick="filterCategory('exam')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="exam">
+                    <i class="ph ph-activity text-xl"></i> Exame Físico
+                </button>
+                <button onclick="filterCategory('disease')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="disease">
+                    <i class="ph ph-virus text-xl"></i> Doenças
+                </button>
+                <button onclick="filterCategory('other')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors" data-category="other">
+                    <i class="ph ph-dots-three-circle text-xl"></i> Outros
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-200">
+                <p class="text-xs text-slate-400 text-center">Modo Offline Ativo<br>Dados salvos localmente</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col h-full relative w-full">
+            
+            <header class="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm sticky top-0">
+                
+                <!-- Mobile Header Title -->
+                <div class="flex items-center justify-between w-full md:hidden">
+                    <div class="flex items-center gap-2 text-clinical-600">
+                        <i class="ph-fill ph-stethoscope text-2xl"></i>
+                        <h1 class="text-lg font-bold tracking-tight">MedQuick</h1>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="relative w-full max-w-2xl group">
+                    <i class="ph ph-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-clinical-500 transition-colors text-lg"></i>
+                    <input type="text" id="searchInput" placeholder="Pesquisar por nome, descrição ou indicação..." 
+                        class="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 transition-all text-sm shadow-inner"
+                        oninput="handleSearch()">
+                </div>
+
+                <!-- Add Button (Desktop) -->
+                <button onclick="openModal('addModal')" class="hidden sm:flex whitespace-nowrap items-center gap-2 bg-clinical-600 hover:bg-clinical-700 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+                    <i class="ph ph-plus-circle text-lg"></i>
+                    Novo Item
+                </button>
+            </header>
+
+            <!-- Mobile Category Tabs (Horizontal Scroll) -->
+            <div class="md:hidden flex overflow-x-auto gap-2 px-4 py-3 bg-white border-b border-slate-200 hide-scrollbar" id="mobile-nav">
+                <button onclick="filterCategory('all')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-clinical-100 text-clinical-700 transition-colors" data-category="all">Todos</button>
+                <button onclick="filterCategory('template')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="template">Anamnese</button>
+                <button onclick="filterCategory('drug')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="drug">Fármacos</button>
+                <button onclick="filterCategory('term')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="term">Termos</button>
+                <button onclick="filterCategory('exam')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="exam">Exame Físico</button>
+                <button onclick="filterCategory('disease')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="disease">Doenças</button>
+                <button onclick="filterCategory('other')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="other">Outros</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 sm:p-8 w-full" id="main-scroll-area">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Section Title -->
+                    <div class="mb-6 flex justify-between items-end">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800" id="current-category-title">Todos os Itens</h2>
+                            <p class="text-sm text-slate-500 mt-1" id="results-count">Carregando...</p>
+                        </div>
+                    </div>
+
+                    <!-- Grid for Items -->
+                    <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Items will be injected here via JS -->
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
+                        <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                            <i class="ph ph-magnifying-glass text-4xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-700">Nenhum item encontrado</h3>
+                        <p class="text-slate-500 max-w-sm mt-2">Tente pesquisar com termos diferentes ou adicione um novo item à sua base de conhecimento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile FAB (Floating Action Button) -->
+            <button onclick="openModal('addModal')" class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-clinical-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-clinical-700 active:scale-95 transition-all z-40">
+                <i class="ph ph-plus text-2xl"></i>
+            </button>
+        </main>
+    </div>
+
+    <!-- Modal Backdrop -->
+    <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+
+    <!-- Modal: Adicionar Novo Item -->
+    <div id="addModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 id="addModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="ph ph-plus-circle text-clinical-600"></i> Criar Novo Item
+                </h3>
+                <button onclick="closeModal('addModal')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Modal Body -->
+            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
+                <form id="addItemForm" class="space-y-5" onsubmit="handleFormSubmit(event)">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <!-- Category -->
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-slate-700">Categoria <span class="text-red-500">*</span></label>
+                            <select id="itemCategory" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                                <option value="" disabled selected>Selecione uma categoria...</option>
+                                <option value="template">Modelo de Anamnese</option>
+                                <option value="drug">Fármaco / Medicamento</option>
+                                <option value="term">Termo Médico</option>
+                                <option value="exam">Exame Físico</option>
+                                <option value="disease">Doença</option>
+                                <option value="other">Outro</option>
+                            </select>
+                        </div>
+
+                        <!-- Name -->
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-medium text-slate-700">Nome / Título <span class="text-red-500">*</span></label>
+                            <input type="text" id="itemName" required placeholder="Ex: Anamnese Pediátrica, Dipirona..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Keywords -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium text-slate-700 flex justify-between">
+                            <span>Palavras-chave</span>
+                            <span class="text-xs text-slate-400 font-normal">Separadas por vírgula</span>
+                        </label>
+                        <input type="text" id="itemKeywords" placeholder="Ex: pediatria, emergência, cardiológico..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                    </div>
+
+                    <!-- Description/Content -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium text-slate-700 flex justify-between">
+                            <span>Conteúdo / Descrição <span class="text-red-500">*</span></span>
+                            <span class="text-xs text-slate-400 font-normal">Apoia quebras de linha</span>
+                        </label>
+                        <textarea id="itemDescription" required rows="6" placeholder="Cole aqui seu modelo de anamnese, posologia do medicamento ou descrição do termo..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none resize-y font-mono text-sm leading-relaxed"></textarea>
+                    </div>
+
+                    <!-- Image URL -->
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-medium text-slate-700">URL da Imagem de Capa (Opcional)</label>
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <i class="ph ph-link absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                <input type="url" id="itemImageUrl" placeholder="https://exemplo.com/imagem.jpg" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Deixe em branco para usar um ícone padrão baseado na categoria.</p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
+                <button type="button" onclick="closeModal('addModal')" class="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-200 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" form="addItemForm" id="submitBtnText" class="px-5 py-2.5 rounded-xl font-medium text-white bg-clinical-600 hover:bg-clinical-700 shadow-sm transition-all flex items-center gap-2">
+                    <i class="ph ph-floppy-disk"></i> Salvar Item
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Visualizar/Ler Item -->
+    <div id="viewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
+            
+            <div class="relative h-32 sm:h-48 w-full bg-slate-100 hidden" id="viewImageContainer">
+                <img id="viewImage" src="" alt="Capa" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <div class="absolute bottom-4 left-6 right-6">
+                    <span id="viewCategoryBadgeImg" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold mb-2 bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
+                    <h2 id="viewTitleImg" class="text-2xl sm:text-3xl font-bold text-white drop-shadow-md"></h2>
+                </div>
+            </div>
+
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/50" id="viewHeaderNoImg">
+                <div>
+                    <span id="viewCategoryBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold mb-2"></span>
+                    <h2 id="viewTitle" class="text-xl sm:text-2xl font-bold text-slate-800"></h2>
+                </div>
+                <div class="flex items-center gap-2 flex-shrink-0 ml-4">
+                    <button onclick="editCurrentItem()" class="text-slate-400 hover:text-clinical-600 hover:bg-slate-200 p-2 rounded-full transition-colors" title="Editar">
+                        <i class="ph ph-pencil-simple text-lg"></i>
+                    </button>
+                    <button onclick="closeModal('viewModal')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors" title="Fechar">
+                        <i class="ph ph-x text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Botão Editar e Fechar para quando tem imagem -->
+            <div id="actionBtnsImg" class="hidden absolute top-4 right-4 flex gap-2 z-10">
+                <button onclick="editCurrentItem()" class="text-white bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full transition-colors" title="Editar">
+                    <i class="ph ph-pencil-simple text-lg"></i>
+                </button>
+                <button onclick="closeModal('viewModal')" class="text-white bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full transition-colors" title="Fechar">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar bg-white">
+                <div id="viewKeywords" class="flex flex-wrap gap-2 mb-4 hidden"></div>
+                <div class="relative group">
+                    <button onclick="copyCurrentViewText()" class="absolute top-0 right-0 bg-slate-100 hover:bg-clinical-100 hover:text-clinical-700 text-slate-500 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm z-10 border border-slate-200 opacity-0 group-hover:opacity-100 focus:opacity-100 sm:opacity-100">
+                        <i class="ph ph-copy"></i> Copiar Texto
+                    </button>
+                    <!-- Wrapper for text selection -->
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2 sm:mt-0">
+                        <pre id="viewDescription" class="whitespace-pre-wrap font-mono text-sm sm:text-base text-slate-700 leading-relaxed font-normal p-2"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center rounded-b-2xl">
+                <button id="deleteBtn" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+                    <i class="ph ph-trash"></i> Excluir
+                </button>
+                <button onclick="copyCurrentViewText()" class="px-6 py-2.5 rounded-xl font-medium text-white bg-clinical-600 hover:bg-clinical-700 shadow-sm transition-all flex items-center gap-2">
+                    <i class="ph ph-copy text-lg"></i> Copiar para o Prontuário
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Custom alert) -->
+    <div id="toastContainer" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- CONSTANTS & CONFIG ---
+        const STORAGE_KEY = 'medquick_data_v1';
+        
+        const CATEGORIES = {
+            'template': { label: 'Modelo de Anamnese', color: 'blue', icon: 'ph-file-text' },
+            'drug': { label: 'Fármaco', color: 'emerald', icon: 'ph-pill' },
+            'term': { label: 'Termo Médico', color: 'purple', icon: 'ph-book-bookmark' },
+            'exam': { label: 'Exame Físico', color: 'amber', icon: 'ph-activity' },
+            'disease': { label: 'Doença', color: 'rose', icon: 'ph-virus' },
+            'other': { label: 'Outros', color: 'slate', icon: 'ph-dots-three-circle' }
+        };
+
+        const CATEGORY_COLORS = {
+            'blue': 'bg-blue-100 text-blue-700 border-blue-200',
+            'emerald': 'bg-emerald-100 text-emerald-700 border-emerald-200',
+            'purple': 'bg-purple-100 text-purple-700 border-purple-200',
+            'amber': 'bg-amber-100 text-amber-700 border-amber-200',
+            'rose': 'bg-rose-100 text-rose-700 border-rose-200',
+            'slate': 'bg-slate-100 text-slate-700 border-slate-200'
+        };
+
+        // --- STATE MANAGEMENT ---
+        let items = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+        let currentViewedItem = null;
+        let editingItemId = null; // Variável para controlar edição
+
+        // Default initial data if storage is empty
+        const INITIAL_DATA = [
+            {
+                id: 'init-1',
+                type: 'template',
+                name: 'Anamnese Padrão Completa',
+                description: `QUEIXA PRINCIPAL (QP):
+"..."
+
+HISTÓRIA DA MOLÉSTIA ATUAL (HMA):
+Início:
+Duração:
+Frequência:
+Características (Tipo de dor, irradiação, intensidade):
+Fatores de Melhora/Piora:
+Sintomas associados:
+
+HISTÓRIA MÉDICA PREGRESSA (HMP):
+Doenças prévias (HAS, DM...):
+Cirurgias prévias:
+Alergias:
+Uso contínuo de medicações:
+
+HISTÓRIA FAMILIAR (HF):
+Doenças na família:
+
+HÁBITOS DE VIDA (HV):
+Tabagismo:
+Etilismo:
+Atividade Física:
+Alimentação:`,
+                imageUrl: '',
+                keywords: ['geral', 'adulto', 'padrão', 'completa']
+            },
+            {
+                id: 'init-2',
+                type: 'drug',
+                name: 'Dipirona Sódica',
+                description: `Indicação: Analgésico e antitérmico.
+                
+Posologia Adulto: 
+- Comprimido 500mg a 1g, via oral, de 6/6h.
+- Solução oral (gotas 500mg/mL): 20 a 40 gotas, de 6/6h.
+
+Posologia Pediátrica:
+- 1 gota (500mg/mL) por kg de peso corporal, até 4x ao dia (máximo 40 gotas/dose).
+
+Contraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
+                imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400&h=300',
+                keywords: ['analgésico', 'antitérmico', 'dor', 'febre', 'pediatria']
+            },
+            {
+                id: 'init-3',
+                type: 'term',
+                name: 'Sinal de Blumberg',
+                description: `Definição: 
+Descompressão brusca dolorosa da parede abdominal.
+
+Pesquisa:
+Comprime-se lentamente e profundamente a parede abdominal com as mãos (geralmente na fossa ilíaca direita, ponto de McBurney) e, em seguida, retira-se a mão subitamente.
+
+Significado Clínico:
+Indica irritação peritoneal. É um sinal clássico, porém não patognomônico, de apendicite aguda quando presente na fossa ilíaca direita.`,
+                imageUrl: '',
+                keywords: ['abdome', 'apendicite', 'peritonite', 'sinal']
+            },
+            {
+                id: 'init-4',
+                type: 'exam',
+                name: 'Manobra de Lasègue',
+                description: `Execução: 
+Com o paciente em decúbito dorsal, o examinador eleva passivamente o membro inferior estendido do paciente.
+
+Interpretação:
+O sinal é positivo quando ocorre dor irradiada no trajeto do nervo ciático (glúteo, face posterior da coxa e perna) antes dos 70 graus de elevação.
+
+Significado:
+Indica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérnia de disco.`,
+                imageUrl: '',
+                keywords: ['neurológico', 'ciático', 'lombalgia', 'ortopedia', 'dor']
+            },
+            {
+                id: 'init-5',
+                type: 'disease',
+                name: 'Hipertensão Arterial Sistêmica (HAS)',
+                description: `Diagnóstico:
+PA sistólica ≥ 140 mmHg e/ou PA diastólica ≥ 90 mmHg, medida em consultório, em pelo menos duas ocasiões diferentes.
+
+Classificação (SBC):
+- Pré-hipertensão: 130-139 / 85-89
+- HAS Estágio 1: 140-159 / 90-99
+- HAS Estágio 2: 160-179 / 100-109
+- HAS Estágio 3: ≥ 180 / ≥ 110
+
+Manejo Inicial:
+Mudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farmacológica dependendo do risco cardiovascular e estágio.`,
+                imageUrl: '',
+                keywords: ['cardio', 'pressão alta', 'crônica', 'risco']
+            }
+        ];
+
+        function initApp() {
+            loadData();
+            renderItems();
+            updateUI();
+        }
+
+        function loadData() {
+            try {
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    items = JSON.parse(stored);
+                } else {
+                    items = [...INITIAL_DATA];
+                    saveData();
+                }
+            } catch (error) {
+                console.error("Erro ao carregar dados do LocalStorage:", error);
+                showToast("Erro ao carregar seus dados locais.", "error");
+                items = [...INITIAL_DATA];
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            } catch (error) {
+                console.error("Erro ao salvar no LocalStorage:", error);
+                showToast("Erro ao salvar. Espaço insuficiente?", "error");
+            }
+        }
+
+        function getFilteredItems() {
+            return items.filter(item => {
+                const matchesCategory = currentFilter === 'all' || item.type === currentFilter;
+                
+                const searchLower = currentSearch.toLowerCase().trim();
+                const hasKeywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(searchLower));
+                
+                const matchesSearch = searchLower === '' || 
+                                      item.name.toLowerCase().includes(searchLower) || 
+                                      item.description.toLowerCase().includes(searchLower) ||
+                                      CATEGORIES[item.type]?.label.toLowerCase().includes(searchLower) ||
+                                      hasKeywordMatch;
+                
+                return matchesCategory && matchesSearch;
+            }).sort((a, b) => b.id.localeCompare(a.id)); // Newest first based on ID timestamp (if generated properly)
+        }
+
+        function renderItems() {
+            const grid = document.getElementById('itemsGrid');
+            const emptyState = document.getElementById('emptyState');
+            const filtered = getFilteredItems();
+
+            // Update Counts
+            document.getElementById('results-count').textContent = `${filtered.length} item(ns) encontrado(s)`;
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                grid.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            grid.classList.remove('hidden');
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            grid.innerHTML = filtered.map(item => {
+                const cat = CATEGORIES[item.type] || CATEGORIES['other'];
+                const badgeColorClass = CATEGORY_COLORS[cat.color];
+                
+                // Fallback icon logic if no image
+                let mediaHTML = '';
+                if (item.imageUrl && item.imageUrl.trim() !== '') {
+                    mediaHTML = `
+                        <div class="h-32 w-full overflow-hidden border-b border-slate-100 bg-slate-100">
+                            <img src="${item.imageUrl}" alt="${item.name}" onerror="this.onerror=null; this.src='https://placehold.co/400x200/f1f5f9/94a3b8?text=Sem+Imagem';" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
+                        </div>`;
+                } else {
+                    // Clinical pattern based on category
+                    const patternColors = {
+                        'template': 'from-blue-50 to-blue-100 text-blue-300',
+                        'drug': 'from-emerald-50 to-emerald-100 text-emerald-300',
+                        'term': 'from-purple-50 to-purple-100 text-purple-300',
+                        'exam': 'from-amber-50 to-amber-100 text-amber-300',
+                        'disease': 'from-rose-50 to-rose-100 text-rose-300',
+                        'other': 'from-slate-50 to-slate-100 text-slate-300'
+                    };
+                    const pt = patternColors[item.type] || patternColors['other'];
+                    
+                    mediaHTML = `
+                        <div class="h-20 w-full overflow-hidden border-b border-slate-100 bg-gradient-to-br ${pt} flex items-center justify-center">
+                             <i class="ph ${cat.icon} text-4xl opacity-50"></i>
+                        </div>`;
+                }
+
+                // Show primary action based on type
+                const primaryAction = item.type === 'template' || item.type === 'drug'
+                    ? `<button onclick="copyItemText('${item.id}', event)" class="bg-clinical-50 hover:bg-clinical-100 text-clinical-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-clinical-100 hover:border-clinical-200">
+                         <i class="ph ph-copy"></i> Copiar
+                       </button>`
+                    : `<button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-slate-200">
+                         <i class="ph ph-eye"></i> Visualizar
+                       </button>`;
+
+                return `
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer group relative" onclick="viewItem('${item.id}')">
+                        <button onclick="editItem('${item.id}', event)" class="absolute top-3 right-3 bg-white/90 hover:bg-white text-slate-500 hover:text-clinical-600 p-2 rounded-lg transition-all shadow-sm backdrop-blur-sm border border-slate-200/50 z-10 opacity-0 group-hover:opacity-100 focus:opacity-100" title="Editar">
+                            <i class="ph ph-pencil-simple text-lg"></i>
+                        </button>
+                        ${mediaHTML}
+                        <div class="p-5 flex-1 flex flex-col">
+                            <div class="mb-3">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${badgeColorClass}">
+                                    <i class="ph ${cat.icon}"></i> ${cat.label}
+                                </span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-lg mb-2 leading-tight group-hover:text-clinical-600 transition-colors">${item.name}</h3>
+                            <p class="text-sm text-slate-500 line-clamp-3 mb-4 flex-1 whitespace-pre-wrap font-mono text-xs">${item.description}</p>
+                            
+                            <div class="flex gap-2 mt-auto pt-4 border-t border-slate-50" onclick="event.stopPropagation()">
+                                ${primaryAction}
+                                ${item.type === 'template' || item.type === 'drug' ? `
+                                <button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-colors border border-slate-200" title="Visualizar">
+                                    <i class="ph ph-arrows-out-simple"></i>
+                                </button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCategory(category) {
+            currentFilter = category;
+            
+            // Update Title
+            const titles = {
+                'all': 'Todos os Itens',
+                'template': 'Modelos de Anamnese',
+                'drug': 'Fármacos e Medicamentos',
+                'term': 'Termos Médicos',
+                'exam': 'Exame Físico',
+                'disease': 'Doenças',
+                'other': 'Outros Cadastros'
+            };
+            document.getElementById('current-category-title').textContent = titles[category];
+
+            // Update Desktop Nav UI
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium bg-clinical-50 text-clinical-700 transition-colors';
+                } else {
+                    btn.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors';
+                }
+            });
+
+            // Update Mobile Nav UI
+            document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+                if (btn.dataset.category === category) {
+                    btn.className = 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-clinical-100 text-clinical-700 transition-colors';
+                } else {
+                    btn.className = 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors';
+                }
+            });
+
+            renderItems();
+            // Scroll top slightly smooth
+            document.getElementById('main-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
+        }
+
+        function handleSearch() {
+            currentSearch = document.getElementById('searchInput').value;
+            renderItems();
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const backdrop = document.getElementById('modalBackdrop');
+            
+            // Show backdrop
+            backdrop.classList.remove('hidden');
+            // Trigger reflow
+            void backdrop.offsetWidth;
+            backdrop.classList.remove('opacity-0');
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            // Trigger reflow
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0', 'translate-y-4');
+            modal.classList.add('opacity-100', 'translate-y-0');
+
+            document.body.classList.add('modal-open');
+
+            if (modalId === 'addModal' && !editingItemId) {
+                // Reseta título se for novo item
+                document.getElementById('addModalTitle').innerHTML = '<i class="ph ph-plus-circle text-clinical-600"></i> Criar Novo Item';
+                document.getElementById('submitBtnText').innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Item';
+                document.getElementById('addItemForm').reset();
+                document.getElementById('itemName').focus();
+            } else if (modalId === 'addModal') {
+                document.getElementById('itemName').focus();
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const backdrop = document.getElementById('modalBackdrop');
+            
+            // Hide modal visually
+            modal.classList.remove('opacity-100', 'translate-y-0');
+            modal.classList.add('opacity-0', 'translate-y-4');
+            
+            // Hide backdrop
+            backdrop.classList.add('opacity-0');
+
+            // Wait for transition to finish before hiding display
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                
+                // Only hide backdrop if no other modal is open
+                if (document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)').length === 0) {
+                     backdrop.classList.add('hidden');
+                     document.body.classList.remove('modal-open');
+                }
+                
+                if (modalId === 'addModal') {
+                    document.getElementById('addItemForm').reset();
+                    editingItemId = null; // Reset edição
+                }
+                if (modalId === 'viewModal') {
+                    currentViewedItem = null;
+                }
+            }, 300);
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const category = document.getElementById('itemCategory').value;
+            const name = document.getElementById('itemName').value;
+            const description = document.getElementById('itemDescription').value;
+            const imageUrl = document.getElementById('itemImageUrl').value;
+            const keywordsRaw = document.getElementById('itemKeywords').value;
+
+            if (!category || !name || !description) {
+                showToast("Preencha os campos obrigatórios.", "error");
+                return;
+            }
+
+            const keywordsArray = keywordsRaw 
+                ? keywordsRaw.split(',').map(k => k.trim()).filter(k => k !== '')
+                : [];
+
+            if (editingItemId) {
+                // Atualizar item existente
+                const index = items.findIndex(i => i.id === editingItemId);
+                if (index > -1) {
+                    items[index] = {
+                        ...items[index],
+                        type: category,
+                        name: name,
+                        description: description,
+                        imageUrl: imageUrl || '',
+                        keywords: keywordsArray
+                    };
+                    showToast("Item atualizado com sucesso!", "success");
+                }
+                editingItemId = null;
+            } else {
+                // Criar novo item
+                const newItem = {
+                    id: 'item_' + Date.now(),
+                    type: category,
+                    name: name,
+                    description: description,
+                    imageUrl: imageUrl || '',
+                    keywords: keywordsArray
+                };
+                items.push(newItem);
+                showToast("Item salvo com sucesso!", "success");
+            }
+
+            saveData();
+            renderItems();
+            closeModal('addModal');
+            
+            // Re-apply filter
+            filterCategory(currentFilter);
+        }
+
+        function editItem(id, event) {
+            if (event) event.stopPropagation(); // Evita abrir o modo leitura ao clicar no botão
+            
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            editingItemId = id;
+            
+            // Preenche o formulário com os dados
+            document.getElementById('itemCategory').value = item.type;
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemKeywords').value = item.keywords ? item.keywords.join(', ') : '';
+            document.getElementById('itemDescription').value = item.description;
+            document.getElementById('itemImageUrl').value = item.imageUrl || '';
+
+            // Atualiza UI do modal de edição
+            document.getElementById('addModalTitle').innerHTML = '<i class="ph ph-pencil-simple text-clinical-600"></i> Editar Item';
+            document.getElementById('submitBtnText').innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Alterações';
+
+            openModal('addModal');
+        }
+
+        function editCurrentItem() {
+            if (currentViewedItem) {
+                const id = currentViewedItem.id;
+                closeModal('viewModal');
+                // Aguarda a animação do modal de visualização fechar antes de abrir a edição
+                setTimeout(() => {
+                    editItem(id);
+                }, 300);
+            }
+        }
+
+        function viewItem(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            currentViewedItem = item;
+            const cat = CATEGORIES[item.type] || CATEGORIES['other'];
+            const badgeColorClass = CATEGORY_COLORS[cat.color];
+            const badgeHTML = `<i class="ph ${cat.icon}"></i> ${cat.label}`;
+
+            // Reset view state
+            document.getElementById('viewImageContainer').classList.add('hidden');
+            document.getElementById('viewHeaderNoImg').classList.remove('hidden');
+            document.getElementById('actionBtnsImg').classList.add('hidden');
+
+            if (item.imageUrl && item.imageUrl.trim() !== '') {
+                // Setup layout with image
+                document.getElementById('viewImageContainer').classList.remove('hidden');
+                document.getElementById('viewHeaderNoImg').classList.add('hidden');
+                document.getElementById('actionBtnsImg').classList.remove('hidden');
+                
+                const imgEl = document.getElementById('viewImage');
+                imgEl.src = item.imageUrl;
+                imgEl.onerror = () => { imgEl.src = 'https://placehold.co/800x400/f1f5f9/94a3b8?text=Sem+Imagem'; };
+                
+                document.getElementById('viewTitleImg').textContent = item.name;
+                const badgeImg = document.getElementById('viewCategoryBadgeImg');
+                badgeImg.innerHTML = badgeHTML;
+            } else {
+                // Setup layout without image
+                document.getElementById('viewTitle').textContent = item.name;
+                const badge = document.getElementById('viewCategoryBadge');
+                badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold mb-2 border ${badgeColorClass}`;
+                badge.innerHTML = badgeHTML;
+            }
+
+            // Exibir Palavras-chave
+            const kwContainer = document.getElementById('viewKeywords');
+            if (item.keywords && item.keywords.length > 0) {
+                kwContainer.innerHTML = item.keywords.map(k => `<span class="bg-clinical-50 text-clinical-600 px-2.5 py-1 rounded-md text-xs font-medium border border-clinical-100">#${k}</span>`).join('');
+                kwContainer.classList.remove('hidden');
+            } else {
+                kwContainer.classList.add('hidden');
+            }
+
+            document.getElementById('viewDescription').textContent = item.description;
+            
+            // Setup delete button
+            const deleteBtn = document.getElementById('deleteBtn');
+            deleteBtn.onclick = () => deleteItem(item.id);
+
+            openModal('viewModal');
+        }
+
+        function deleteItem(id) {
+            // Using custom UI replacement for confirm()
+            // Simulating a quick confirmation here for brevity, usually we'd make a tiny modal.
+            // Since alert/confirm are forbidden, we will delete directly but show a toast with an "Undo" option would be best. 
+            // For simplicity in single file, we will remove and close modal.
+            
+            const itemIndex = items.findIndex(i => i.id === id);
+            if (itemIndex > -1) {
+                items.splice(itemIndex, 1);
+                saveData();
+                renderItems();
+                closeModal('viewModal');
+                showToast("Item excluído com sucesso.", "success");
+            }
+        }
+
+        function copyItemText(id, event) {
+            if (event) event.stopPropagation(); // Prevent opening modal if clicked on card button
+            
+            const item = items.find(i => i.id === id);
+            if (item) {
+                fallbackCopyTextToClipboard(item.description);
+            }
+        }
+
+        function copyCurrentViewText() {
+            if (currentViewedItem) {
+                fallbackCopyTextToClipboard(currentViewedItem.description);
+                // Visual feedback in modal
+                const copyBtns = document.querySelectorAll('#viewModal button i.ph-copy');
+                copyBtns.forEach(icon => {
+                    icon.classList.remove('ph-copy');
+                    icon.classList.add('ph-check', 'text-emerald-500');
+                    setTimeout(() => {
+                        icon.classList.remove('ph-check', 'text-emerald-500');
+                        icon.classList.add('ph-copy');
+                    }, 2000);
+                });
+            }
+        }
+
+        // Robust copy function avoiding navigator.clipboard restrictions in iframes
+        function fallbackCopyTextToClipboard(text) {
+            var textArea = document.createElement("textarea");
+            // Place in top-left corner of screen regardless of scroll position.
+            textArea.style.position = 'fixed';
+            textArea.style.top = 0;
+            textArea.style.left = 0;
+            // Ensure it has a small width and height. Setting to 1px / 1em doesn't work as this gives a negative w/h on some browsers.
+            textArea.style.width = '2em';
+            textArea.style.height = '2em';
+            // We don't need padding, reducing the size if it does flash render.
+            textArea.style.padding = 0;
+            // Clean up any borders.
+            textArea.style.border = 'none';
+            textArea.style.outline = 'none';
+            textArea.style.boxShadow = 'none';
+            // Avoid flash of white box if rendered for any reason.
+            textArea.style.background = 'transparent';
+            textArea.value = text;
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                var successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("Texto copiado para a área de transferência!", "success");
+                } else {
+                    showToast("Não foi possível copiar o texto automaticamente.", "error");
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                showToast("Erro ao copiar. Seu navegador pode bloquear esta ação.", "error");
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Custom Toast Notification System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            // Define colors
+            let bgClass = 'bg-slate-800 text-white';
+            let icon = 'ph-info';
+            
+            if (type === 'success') {
+                bgClass = 'bg-emerald-600 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-600 text-white';
+                icon = 'ph-warning-circle';
+            }
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 ${bgClass} pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="ph ${icon} text-xl"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            setTimeout(() => {
+                toast.classList.remove('translate-y-10', 'opacity-0');
+            }, 10);
+
+            // Animate out and remove
+            setTimeout(() => {
+                toast.classList.add('translate-y-10', 'opacity-0');
+                setTimeout(() => {
+                    if (container.contains(toast)) {
+                        container.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initApp();
+            
+            // Close modals on escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const openModals = document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)');
+                    openModals.forEach(modal => {
+                        closeModal(modal.id);
+                    });
+                }
+            });
+
+            // Close modal when clicking on backdrop
+            document.getElementById('modalBackdrop').addEventListener('click', () => {
+                const openModals = document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)');
+                openModals.forEach(modal => {
+                    closeModal(modal.id);
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>
