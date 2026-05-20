@@ -182,26 +182,32 @@ export function AddItemModal({ isOpen, editItem, onClose, onSave }: AddItemModal
     setSaving(true);
     const keywords = form.keywords ? form.keywords.split(',').map(k => k.trim()).filter(Boolean) : [];
 
-    const itemData: Omit<MedItem, 'id' | 'createdAt'> = {
+    // Função auxiliar para converter string vazia para null
+    const val = (s: string) => (s && s.trim() !== '' ? s.trim() : null);
+
+    const itemData: any = {
       type: form.type as CategoryType,
       name: form.name.trim(),
-      subcategory: form.subcategory.trim() || undefined,
-      imageUrl: form.imageUrl.trim() || undefined,
+      subcategory: val(form.subcategory),
+      imageUrl: val(form.imageUrl),
       keywords,
-      anamneseText: form.type === 'template' ? form.anamneseText : undefined,
-      mechanismOfAction: form.type === 'drug' ? form.mechanismOfAction : undefined,
-      drugInteractions: form.type === 'drug' ? form.drugInteractions : undefined,
-      indications: form.type === 'drug' ? form.indications : undefined,
-      commercialNames: form.type === 'drug' ? form.commercialNames : undefined,
-      meaning: form.type === 'term' ? form.meaning : undefined,
-      popularTerms: form.type === 'term' ? form.popularTerms : undefined,
-      whatIs: form.type === 'disease' ? form.whatIs : undefined,
-      pathologicalMechanism: form.type === 'disease' ? form.pathologicalMechanism : undefined,
-      diagnosis: form.type === 'disease' ? form.diagnosis : undefined,
-      treatment: form.type === 'disease' ? form.treatment : undefined,
-      popularNames: form.type === 'disease' ? form.popularNames : undefined,
-      otherText: form.type === 'other' ? form.otherText : undefined,
+      anamneseText: form.type === 'template' ? val(form.anamneseText) : null,
+      mechanismOfAction: form.type === 'drug' ? val(form.mechanismOfAction) : null,
+      drugInteractions: form.type === 'drug' ? val(form.drugInteractions) : null,
+      indications: form.type === 'drug' ? val(form.indications) : null,
+      commercialNames: form.type === 'drug' ? val(form.commercialNames) : null,
+      meaning: form.type === 'term' ? val(form.meaning) : null,
+      popularTerms: form.type === 'term' ? val(form.popularTerms) : null,
+      whatIs: form.type === 'disease' ? val(form.whatIs) : null,
+      pathologicalMechanism: form.type === 'disease' ? val(form.pathologicalMechanism) : null,
+      diagnosis: form.type === 'disease' ? val(form.diagnosis) : null,
+      treatment: form.type === 'disease' ? val(form.treatment) : null,
+      popularNames: form.type === 'disease' ? val(form.popularNames) : null,
+      otherText: form.type === 'other' ? val(form.otherText) : null,
     };
+
+    // Remove chaves com valor null para não poluir o Firestore (Opcional, mas recomendado)
+    Object.keys(itemData).forEach(key => itemData[key] === null && delete itemData[key]);
 
     await onSave(itemData, !!editItem, editItem?.id);
     setSaving(false);

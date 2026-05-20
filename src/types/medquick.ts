@@ -33,6 +33,10 @@ export interface MedItem {
 
   // Outros
   otherText?: string;
+
+  // --- ADICIONE ESTAS DUAS LINHAS AQUI ---
+  characteristics?: string;
+  description?: string;
 }
 
 export type FormData = {
