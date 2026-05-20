@@ -1,5 +1,4 @@
 import { defineConfig, PluginOption } from "vite";
-import { enterDevPlugin, enterProdPlugin } from 'vite-plugin-enter-dev';
 import path from "path";
 
 // https://vitejs.dev/config/
