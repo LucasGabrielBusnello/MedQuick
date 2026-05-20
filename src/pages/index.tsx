@@ -95,26 +95,34 @@ export default function Index() {
     isEdit: boolean,
     id?: string
   ) => {
+    // 1. FILTRO DE LIMPEZA: Remove qualquer campo que seja undefined
+    const cleanData = { ...itemData };
+    Object.keys(cleanData).forEach(key => {
+      if (cleanData[key as keyof typeof cleanData] === undefined) {
+        delete cleanData[key as keyof typeof cleanData];
+      }
+    });
+
+    // 2. SALVA NO FIREBASE OU LOCAL
     if (useFirebase) {
       if (isEdit && id) {
-        await updateDoc(doc(db, COLLECTION_NAME, id), { ...itemData });
+        await updateDoc(doc(db, COLLECTION_NAME, id), cleanData);
         showToast('Item atualizado na nuvem!', 'success');
       } else {
-        await addDoc(collection(db, COLLECTION_NAME), { ...itemData, createdAt: serverTimestamp() });
+        await addDoc(collection(db, COLLECTION_NAME), { ...cleanData, createdAt: serverTimestamp() });
         showToast('Item criado na nuvem!', 'success');
       }
     } else {
       if (isEdit && id) {
-        setItems(prev => prev.map(i => i.id === id ? { ...i, ...itemData } : i));
+        setItems(prev => prev.map(i => i.id === id ? { ...i, ...cleanData } as MedItem : i));
         showToast('Item atualizado!', 'success');
       } else {
-        const newItem: MedItem = { ...itemData, id: 'local_' + Date.now(), keywords: itemData.keywords ?? [] };
+        const newItem = { ...cleanData, id: 'local_' + Date.now(), keywords: cleanData.keywords ?? [] } as MedItem;
         setItems(prev => [newItem, ...prev]);
         showToast('Item salvo localmente!', 'success');
       }
     }
   };
-
   const deleteItem = async (id: string) => {
     if (useFirebase) {
       await deleteDoc(doc(db, COLLECTION_NAME, id));
