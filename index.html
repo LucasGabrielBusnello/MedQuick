@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     
     <script>
         tailwind.config = {
@@ -70,7 +73,6 @@
 
     <div class="flex h-screen overflow-hidden">
         
-        <!-- Sidebar (Desktop) / Bottom Nav (Mobile - adapted via CSS) -->
         <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-full shadow-sm z-10">
             <div class="p-6 flex items-center gap-3 text-clinical-600">
                 <i class="ph-fill ph-stethoscope text-3xl"></i>
@@ -102,16 +104,17 @@
             </nav>
 
             <div class="p-4 border-t border-slate-200">
-                <p class="text-xs text-slate-400 text-center">Modo Offline Ativo<br>Dados salvos localmente</p>
+                <p id="connectionStatus" class="text-xs text-slate-400 text-center flex flex-col items-center gap-1">
+                    <i class="ph ph-database text-lg"></i>
+                    Modo Offline Ativo<br>Dados salvos localmente
+                </p>
             </div>
         </aside>
 
-        <!-- Main Content Area -->
         <main class="flex-1 flex flex-col h-full relative w-full">
             
             <header class="bg-white border-b border-slate-200 px-4 sm:px-8 py-4 sm:py-5 flex flex-col sm:flex-row gap-4 justify-between items-center z-10 shadow-sm sticky top-0">
                 
-                <!-- Mobile Header Title -->
                 <div class="flex items-center justify-between w-full md:hidden">
                     <div class="flex items-center gap-2 text-clinical-600">
                         <i class="ph-fill ph-stethoscope text-2xl"></i>
@@ -119,7 +122,6 @@
                     </div>
                 </div>
 
-                <!-- Search Bar -->
                 <div class="relative w-full max-w-2xl group">
                     <i class="ph ph-magnifying-glass absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 group-focus-within:text-clinical-500 transition-colors text-lg"></i>
                     <input type="text" id="searchInput" placeholder="Pesquisar por nome, descrição ou indicação..." 
@@ -127,14 +129,12 @@
                         oninput="handleSearch()">
                 </div>
 
-                <!-- Add Button (Desktop) -->
                 <button onclick="openModal('chooseActionModal')" class="hidden sm:flex whitespace-nowrap items-center gap-2 bg-clinical-600 hover:bg-clinical-700 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
                     <i class="ph ph-plus-circle text-lg"></i>
                     Novo Item
                 </button>
             </header>
 
-            <!-- Mobile Category Tabs (Horizontal Scroll) -->
             <div class="md:hidden flex overflow-x-auto gap-2 px-4 py-3 bg-white border-b border-slate-200 hide-scrollbar" id="mobile-nav">
                 <button onclick="filterCategory('all')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-clinical-100 text-clinical-700 transition-colors" data-category="all">Todos</button>
                 <button onclick="filterCategory('template')" class="mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors" data-category="template">Anamnese</button>
@@ -147,7 +147,6 @@
 
             <div class="flex-1 overflow-y-auto p-4 sm:p-8 w-full" id="main-scroll-area">
                 <div class="max-w-7xl mx-auto">
-                    <!-- Section Title -->
                     <div class="mb-4 flex justify-between items-end">
                         <div>
                             <h2 class="text-2xl font-bold text-slate-800" id="current-category-title">Todos os Itens</h2>
@@ -155,17 +154,12 @@
                         </div>
                     </div>
 
-                    <!-- Subcategory Filters -->
                     <div id="subcategoryFilters" class="flex overflow-x-auto gap-2 mb-6 hide-scrollbar hidden pb-2">
-                        <!-- Chips serão injetados aqui -->
-                    </div>
+                        </div>
 
-                    <!-- Grid for Items -->
                     <div id="itemsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <!-- Items will be injected here via JS -->
-                    </div>
+                        </div>
                     
-                    <!-- Empty State -->
                     <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-center">
                         <div class="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-4 text-slate-400">
                             <i class="ph ph-magnifying-glass text-4xl"></i>
@@ -176,17 +170,14 @@
                 </div>
             </div>
 
-            <!-- Mobile FAB (Floating Action Button) -->
             <button onclick="openModal('chooseActionModal')" class="sm:hidden fixed bottom-6 right-6 w-14 h-14 bg-clinical-600 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-clinical-700 active:scale-95 transition-all z-40">
                 <i class="ph ph-plus text-2xl"></i>
             </button>
         </main>
     </div>
 
-    <!-- Modal Backdrop -->
     <div id="modalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
 
-    <!-- Modal: Escolha de Ação (Criar ou Importar) -->
     <div id="chooseActionModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden pointer-events-auto">
             <div class="p-6">
@@ -223,7 +214,6 @@
         </div>
     </div>
 
-    <!-- Modal: Importação em Massa -->
     <div id="importModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -249,17 +239,12 @@
 Categoria: Doença
 Subcategoria: Cardiologia
 Nome: Hipertensão Arterial
+Nomes Populares: Pressão Alta
 Tags: cardio, pressao, cronica
 Imagem: 
-Descrição: Aumento persistente da pressão arterial.
-Sintomas comuns: Dor de cabeça, tontura...
-===
-Categoria: Fármaco
-Subcategoria: Anti-hipertensivo
-Nome: Losartana 50mg
-Tags: bra
-Imagem: 
-Descrição: Posologia: 1 cp VO 12/12h.
+Características: Aumento persistente da pressão arterial.
+Diagnóstico/Sintomas: Maioria assintomático, pode apresentar cefaleia.
+Tratamento: MEV e Losartana 50mg.
 ==="></textarea>
             </div>
             
@@ -272,11 +257,9 @@ Descrição: Posologia: 1 cp VO 12/12h.
         </div>
     </div>
 
-    <!-- Modal: Adicionar Novo Item -->
     <div id="addModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden pointer-events-auto">
             
-            <!-- Modal Header -->
             <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <h3 id="addModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <i class="ph ph-plus-circle text-clinical-600"></i> Criar Novo Item
@@ -286,14 +269,12 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 </button>
             </div>
             
-            <!-- Modal Body -->
             <div class="p-6 overflow-y-auto flex-1 custom-scrollbar">
-                <form id="addItemForm" class="space-y-5" onsubmit="handleFormSubmit(event)">
+                <form id="addItemForm" class="space-y-6" onsubmit="handleFormSubmit(event)">
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <!-- Category -->
+                    <div class="bg-blue-50/40 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div class="space-y-1.5">
-                            <label class="block text-sm font-medium text-slate-700">Categoria <span class="text-red-500">*</span></label>
+                            <label class="block text-sm font-semibold text-slate-700">Categoria <span class="text-red-500">*</span></label>
                             <select id="itemCategory" required class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
                                 <option value="" disabled selected>Selecione uma categoria...</option>
                                 <option value="template">Modelo de Anamnese</option>
@@ -304,53 +285,67 @@ Descrição: Posologia: 1 cp VO 12/12h.
                                 <option value="other">Outro</option>
                             </select>
                         </div>
-
-                        <!-- Subcategory -->
                         <div class="space-y-1.5">
-                            <label class="block text-sm font-medium text-slate-700">Subcategoria <span class="text-xs text-slate-400 font-normal">(Opcional)</span></label>
-                            <input type="text" id="itemSubcategory" placeholder="Ex: Cardiologia, Pediatria..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                            <label class="block text-sm font-semibold text-slate-700">Nome / Título <span class="text-red-500">*</span></label>
+                            <input type="text" id="itemName" required placeholder="Ex: Anamnese Pediátrica, Dipirona..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-slate-700">Subcategoria <span class="text-xs text-slate-400 font-normal">(Opcional)</span></label>
+                            <input type="text" id="itemSubcategory" placeholder="Ex: Cardiologia, Antibiótico..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
                         </div>
                     </div>
 
-                    <!-- Name -->
-                    <div class="space-y-1.5">
-                        <label class="block text-sm font-medium text-slate-700">Nome / Título <span class="text-red-500">*</span></label>
-                        <input type="text" id="itemName" required placeholder="Ex: Anamnese Pediátrica, Dipirona..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        
+                        <div class="space-y-1.5 md:col-span-2">
+                            <label class="block text-sm font-bold text-slate-700 text-clinical-700 flex items-center gap-1.5">
+                                <i class="ph ph-info"></i> Informações sobre (Fisiopatologia / Características)
+                            </label>
+                            <textarea id="itemCharacteristics" rows="3" placeholder="O que é? Como funciona? Descreva a base da doença ou mecanismo de ação do fármaco..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none resize-y text-sm leading-relaxed"></textarea>
+                        </div>
+                        
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700 text-amber-600 flex items-center gap-1.5">
+                                <i class="ph ph-magnifying-glass"></i> Diagnóstico / Sintomas / Sinais
+                            </label>
+                            <textarea id="itemDiagnosis" rows="4" placeholder="Critérios diagnósticos, exames físicos, apresentação clínica e queixas do paciente..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-white text-slate-700 transition-all outline-none resize-y text-sm leading-relaxed"></textarea>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700 text-emerald-600 flex items-center gap-1.5">
+                                <i class="ph ph-pill"></i> Tratamentos (Medicamentosos e etc)
+                            </label>
+                            <textarea id="itemTreatment" rows="4" placeholder="Conduta terapêutica, prescrições, posologias e orientações não farmacológicas..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white text-slate-700 transition-all outline-none resize-y text-sm leading-relaxed font-mono"></textarea>
+                        </div>
                     </div>
 
-                    <!-- Keywords -->
-                    <div class="space-y-1.5">
-                        <label class="block text-sm font-medium text-slate-700 flex justify-between">
-                            <span>Palavras-chave</span>
-                            <span class="text-xs text-slate-400 font-normal">Separadas por vírgula</span>
-                        </label>
-                        <input type="text" id="itemKeywords" placeholder="Ex: pediatria, emergência, cardiológico..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
-                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-slate-700">Nomes relacionados (Populares)</label>
+                            <input type="text" id="itemPopularNames" placeholder="Ex: Pressão alta, açúcar no sangue, puxera..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                        </div>
 
-                    <!-- Description/Content -->
-                    <div class="space-y-1.5">
-                        <label class="block text-sm font-medium text-slate-700 flex justify-between">
-                            <span>Conteúdo / Descrição <span class="text-red-500">*</span></span>
-                            <span class="text-xs text-slate-400 font-normal">Apoia quebras de linha</span>
-                        </label>
-                        <textarea id="itemDescription" required rows="6" placeholder="Cole aqui seu modelo de anamnese, posologia do medicamento ou descrição do termo..." class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none resize-y font-mono text-sm leading-relaxed"></textarea>
-                    </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-semibold text-slate-700 flex justify-between">
+                                <span>Palavras Chaves (Tags)</span>
+                                <span class="text-xs text-slate-400 font-normal">Separadas por vírgula</span>
+                            </label>
+                            <input type="text" id="itemKeywords" placeholder="Ex: pediatria, emergência, cardiológico..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                        </div>
 
-                    <!-- Image URL -->
-                    <div class="space-y-1.5">
-                        <label class="block text-sm font-medium text-slate-700">URL da Imagem de Capa (Opcional)</label>
-                        <div class="flex gap-2">
-                            <div class="relative flex-1">
-                                <i class="ph ph-link absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
-                                <input type="url" id="itemImageUrl" placeholder="https://exemplo.com/imagem.jpg" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                        <div class="space-y-1.5 md:col-span-2">
+                            <label class="block text-sm font-semibold text-slate-700">URL da Imagem de Capa (Opcional)</label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <i class="ph ph-link absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"></i>
+                                    <input type="url" id="itemImageUrl" placeholder="https://exemplo.com/imagem.jpg" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-clinical-500/20 focus:border-clinical-500 bg-white text-slate-700 transition-all outline-none">
+                                </div>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">Deixe em branco para usar um ícone padrão baseado na categoria.</p>
                     </div>
                 </form>
             </div>
-
-            <!-- Modal Footer -->
+            
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 rounded-b-2xl">
                 <button type="button" onclick="closeModal('addModal')" class="px-5 py-2.5 rounded-xl font-medium text-slate-600 hover:bg-slate-200 transition-colors">
                     Cancelar
@@ -362,80 +357,64 @@ Descrição: Posologia: 1 cp VO 12/12h.
         </div>
     </div>
 
-    <!-- Modal: Visualizar/Ler Item -->
     <div id="viewModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 sm:p-6 opacity-0 translate-y-4 transition-all duration-300 pointer-events-none">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto">
             
-            <div class="relative h-32 sm:h-48 w-full bg-slate-100 hidden" id="viewImageContainer">
-                <img id="viewImage" src="" alt="Capa" class="w-full h-full object-cover">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div class="absolute bottom-4 left-6 right-6">
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span id="viewCategoryBadgeImg" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
-                        <span id="viewSubcategoryBadgeImg" class="hidden items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
-                    </div>
-                    <h2 id="viewTitleImg" class="text-2xl sm:text-3xl font-bold text-white drop-shadow-md"></h2>
-                </div>
-            </div>
-
-            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-start bg-slate-50/50" id="viewHeaderNoImg">
-                <div>
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span id="viewCategoryBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border"></span>
-                        <span id="viewSubcategoryBadge" class="hidden items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border bg-white text-slate-500 border-slate-200 shadow-sm"></span>
-                    </div>
-                    <h2 id="viewTitle" class="text-xl sm:text-2xl font-bold text-slate-800"></h2>
-                </div>
-                <div class="flex items-center gap-2 flex-shrink-0 ml-4">
-                    <button onclick="editCurrentItem()" class="text-slate-400 hover:text-clinical-600 hover:bg-slate-200 p-2 rounded-full transition-colors" title="Editar">
+            <div class="relative h-32 sm:h-48 w-full bg-slate-800" id="viewImageContainer">
+                <img id="viewImage" src="" alt="Capa" class="w-full h-full object-cover opacity-70">
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent"></div>
+                
+                <div class="absolute top-4 right-4 flex gap-2 z-10">
+                    <button onclick="editCurrentItem()" class="text-white bg-black/40 hover:bg-black/60 backdrop-blur-md p-2 rounded-full transition-colors" title="Editar">
                         <i class="ph ph-pencil-simple text-lg"></i>
                     </button>
-                    <button onclick="closeModal('viewModal')" class="text-slate-400 hover:text-slate-600 hover:bg-slate-200 p-2 rounded-full transition-colors" title="Fechar">
+                    <button onclick="closeModal('viewModal')" class="text-white bg-black/40 hover:bg-black/60 backdrop-blur-md p-2 rounded-full transition-colors" title="Fechar">
                         <i class="ph ph-x text-lg"></i>
                     </button>
                 </div>
-            </div>
 
-            <!-- Botão Editar e Fechar para quando tem imagem -->
-            <div id="actionBtnsImg" class="hidden absolute top-4 right-4 flex gap-2 z-10">
-                <button onclick="editCurrentItem()" class="text-white bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full transition-colors" title="Editar">
-                    <i class="ph ph-pencil-simple text-lg"></i>
-                </button>
-                <button onclick="closeModal('viewModal')" class="text-white bg-black/20 hover:bg-black/40 backdrop-blur-md p-2 rounded-full transition-colors" title="Fechar">
-                    <i class="ph ph-x text-lg"></i>
-                </button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar bg-white">
-                <div id="viewKeywords" class="flex flex-wrap gap-2 mb-4 hidden"></div>
-                <div class="relative group">
-                    <button onclick="copyCurrentViewText()" class="absolute top-0 right-0 bg-slate-100 hover:bg-clinical-100 hover:text-clinical-700 text-slate-500 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors shadow-sm z-10 border border-slate-200 opacity-0 group-hover:opacity-100 focus:opacity-100 sm:opacity-100">
-                        <i class="ph ph-copy"></i> Copiar Texto
-                    </button>
-                    <!-- Wrapper for text selection -->
-                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-2 sm:mt-0">
-                        <pre id="viewDescription" class="whitespace-pre-wrap font-mono text-sm sm:text-base text-slate-700 leading-relaxed font-normal p-2"></pre>
+                <div class="absolute bottom-4 left-6 right-6">
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span id="viewCategoryBadge" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
+                        <span id="viewSubcategoryBadge" class="hidden items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/20 text-white backdrop-blur-md border border-white/30"></span>
                     </div>
+                    <h2 id="viewTitle" class="text-2xl sm:text-3xl font-bold text-white drop-shadow-md"></h2>
+                    <p id="viewPopularNames" class="text-sm text-slate-300 mt-1 italic hidden"></p>
                 </div>
             </div>
 
-            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center rounded-b-2xl">
-                <button id="deleteBtn" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1">
+            <div class="p-6 overflow-y-auto flex-1 custom-scrollbar bg-slate-50 space-y-5" id="viewContentSections">
+                </div>
+
+            <div class="px-6 py-4 border-t border-slate-200 bg-white flex justify-between items-center rounded-b-2xl">
+                <button id="deleteBtn" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-1">
                     <i class="ph ph-trash"></i> Excluir
                 </button>
-                <button onclick="copyCurrentViewText()" class="px-6 py-2.5 rounded-xl font-medium text-white bg-clinical-600 hover:bg-clinical-700 shadow-sm transition-all flex items-center gap-2">
+                <button onclick="copyCurrentViewText()" class="px-6 py-2.5 rounded-xl font-bold text-white bg-clinical-600 hover:bg-clinical-700 shadow-sm transition-all flex items-center gap-2">
                     <i class="ph ph-copy text-lg"></i> Copiar para o Prontuário
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification (Custom alert) -->
     <div id="toastContainer" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
+        /* =========================================================================
+           CONFIGURAÇÃO DO FIREBASE (NUVEM COMPARTILHADA)
+           Cole suas chaves do Firebase abaixo para ativar o modo online em tempo real.
+           Caso contrário, o sistema rodará perfeitamente offline no LocalStorage.
+        ========================================================================= */
+        const firebaseConfig = {
+            // apiKey: "SUA_API_KEY",
+            // authDomain: "SEU_PROJETO.firebaseapp.com",
+            // projectId: "SEU_PROJETO"
+        };
+
         // --- CONSTANTS & CONFIG ---
-        const STORAGE_KEY = 'medquick_data_v1';
+        const STORAGE_KEY = 'medquick_data_collab';
+        let db = null;
+        let useFirebase = false;
         
         const CATEGORIES = {
             'template': { label: 'Modelo de Anamnese', color: 'blue', icon: 'ph-file-text' },
@@ -463,82 +442,79 @@ Descrição: Posologia: 1 cp VO 12/12h.
         let currentViewedItem = null;
         let editingItemId = null; // Variável para controlar edição
 
-        // Default initial data if storage is empty
-        const INITIAL_DATA = [
-            {
-                id: 'init-1',
-                type: 'template',
-                subcategory: 'Clínica Médica',
-                name: 'Anamnese Padrão Completa',
-                description: `QUEIXA PRINCIPAL (QP):\n"..."\n\nHISTÓRIA DA MOLÉSTIA ATUAL (HMA):\nInício:\nDuração:\nFrequência:\nCaracterísticas (Tipo de dor, irradiação, intensidade):\nFatores de Melhora/Piora:\nSintomas associados:\n\nHISTÓRIA MÉDICA PREGRESSA (HMP):\nDoenças prévias (HAS, DM...):\nCirurgias prévias:\nAlergias:\nUso contínuo de medicações:\n\nHISTÓRIA FAMILIAR (HF):\nDoenças na família:\n\nHÁBITOS DE VIDA (HV):\nTabagismo:\nEtilismo:\nAtividade Física:\nAlimentação:`,
-                imageUrl: '',
-                keywords: ['geral', 'adulto', 'padrão', 'completa']
-            },
-            {
-                id: 'init-2',
-                type: 'drug',
-                subcategory: 'Analgesia',
-                name: 'Dipirona Sódica',
-                description: `Indicação: Analgésico e antitérmico.\n                \nPosologia Adulto: \n- Comprimido 500mg a 1g, via oral, de 6/6h.\n- Solução oral (gotas 500mg/mL): 20 a 40 gotas, de 6/6h.\n\nPosologia Pediátrica:\n- 1 gota (500mg/mL) por kg de peso corporal, até 4x ao dia (máximo 40 gotas/dose).\n\nContraindicações: Alergia prévia, porfiria hepática, deficiência de G6PD.`,
-                imageUrl: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=400&h=300',
-                keywords: ['analgésico', 'antitérmico', 'dor', 'febre', 'pediatria']
-            },
-            {
-                id: 'init-3',
-                type: 'term',
-                subcategory: 'Gastroenterologia',
-                name: 'Sinal de Blumberg',
-                description: `Definição: \nDescompressão brusca dolorosa da parede abdominal.\n\nPesquisa:\nComprime-se lentamente e profundamente a parede abdominal com as mãos (geralmente na fossa ilíaca direita, ponto de McBurney) e, em seguida, retira-se a mão subitamente.\n\nSignificado Clínico:\nIndica irritação peritoneal. É um sinal clássico, porém não patognomônico, de apendicite aguda quando presente na fossa ilíaca direita.`,
-                imageUrl: '',
-                keywords: ['abdome', 'apendicite', 'peritonite', 'sinal']
-            },
-            {
-                id: 'init-4',
-                type: 'exam',
-                subcategory: 'Ortopedia',
-                name: 'Manobra de Lasègue',
-                description: `Execução: \nCom o paciente em decúbito dorsal, o examinador eleva passivamente o membro inferior estendido do paciente.\n\nInterpretação:\nO sinal é positivo quando ocorre dor irradiada no trajeto do nervo ciático (glúteo, face posterior da coxa e perna) antes dos 70 graus de elevação.\n\nSignificado:\nIndica radiculopatia lombar (geralmente L4-S1), frequentemente associada a hérnia de disco.`,
-                imageUrl: '',
-                keywords: ['neurológico', 'ciático', 'lombalgia', 'ortopedia', 'dor']
-            },
-            {
-                id: 'init-5',
-                type: 'disease',
-                subcategory: 'Cardiologia',
-                name: 'Hipertensão Arterial Sistêmica (HAS)',
-                description: `Diagnóstico:\nPA sistólica ≥ 140 mmHg e/ou PA diastólica ≥ 90 mmHg, medida em consultório, em pelo menos duas ocasiões diferentes.\n\nClassificação (SBC):\n- Pré-hipertensão: 130-139 / 85-89\n- HAS Estágio 1: 140-159 / 90-99\n- HAS Estágio 2: 160-179 / 100-109\n- HAS Estágio 3: ≥ 180 / ≥ 110\n\nManejo Inicial:\nMudança de estilo de vida (dieta DASH, perda de peso, exercício). Terapia farmacológica dependendo do risco cardiovascular e estágio.`,
-                imageUrl: '',
-                keywords: ['cardio', 'pressão alta', 'crônica', 'risco']
-            }
-        ];
-
+        // Função de Inicialização (Firebase ou Local)
         function initApp() {
-            loadData();
-            renderItems();
+            try {
+                if (firebaseConfig.apiKey) {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    useFirebase = true;
+                    
+                    document.getElementById('connectionStatus').innerHTML = `
+                        <i class="ph ph-cloud-check text-emerald-500 text-xl"></i>
+                        <span class="text-emerald-600 font-medium">Nuvem Sincronizada</span>
+                    `;
+
+                    // Listener em Tempo Real (A mágica da colaboração)
+                    db.collection("medquick_items").onSnapshot((querySnapshot) => {
+                        items = [];
+                        querySnapshot.forEach((doc) => {
+                            items.push({ id: doc.id, ...doc.data() });
+                        });
+                        renderItems();
+                    }, (error) => {
+                        console.error("Erro no Snapshot:", error);
+                        showToast("Erro ao sincronizar com a nuvem.", "error");
+                    });
+
+                } else {
+                    loadLocalData();
+                    renderItems();
+                }
+            } catch (e) {
+                console.error("Erro na inicialização:", e);
+                loadLocalData();
+                renderItems();
+            }
         }
 
-        function loadData() {
+        function loadLocalData() {
             try {
                 const stored = localStorage.getItem(STORAGE_KEY);
-                if (stored) {
-                    items = JSON.parse(stored);
-                } else {
-                    items = [...INITIAL_DATA];
-                    saveData();
-                }
+                if (stored) items = JSON.parse(stored);
             } catch (error) {
                 console.error("Erro ao carregar dados do LocalStorage:", error);
-                showToast("Erro ao carregar seus dados locais.", "error");
-                items = [...INITIAL_DATA];
             }
         }
 
-        function saveData() {
-            try {
+        // Função Centralizada de Salvamento
+        async function saveItem(itemData, isEdit = false, idToEdit = null) {
+            if (useFirebase) {
+                try {
+                    if (isEdit && idToEdit) {
+                        await db.collection("medquick_items").doc(idToEdit).update(itemData);
+                        showToast("Item atualizado na nuvem!", "success");
+                    } else {
+                        itemData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                        await db.collection("medquick_items").add(itemData);
+                        showToast("Item criado na nuvem!", "success");
+                    }
+                } catch (e) {
+                    console.error("Erro ao salvar no Firebase:", e);
+                    showToast("Erro ao salvar na nuvem.", "error");
+                }
+            } else {
+                if (isEdit && idToEdit) {
+                    const index = items.findIndex(i => i.id === idToEdit);
+                    if (index > -1) items[index] = { id: idToEdit, ...itemData };
+                    showToast("Item atualizado localmente!", "success");
+                } else {
+                    itemData.id = 'item_' + Date.now();
+                    items.unshift(itemData);
+                    showToast("Item salvo localmente!", "success");
+                }
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-            } catch (error) {
-                console.error("Erro ao salvar no LocalStorage:", error);
-                showToast("Erro ao salvar. Espaço insuficiente?", "error");
+                renderItems();
             }
         }
 
@@ -549,13 +525,10 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 const searchLower = currentSearch.toLowerCase().trim();
                 const hasKeywordMatch = item.keywords && item.keywords.some(k => k.toLowerCase().includes(searchLower));
                 
-                const matchesSearch = searchLower === '' || 
-                                      item.name.toLowerCase().includes(searchLower) || 
-                                      item.description.toLowerCase().includes(searchLower) ||
-                                      CATEGORIES[item.type]?.label.toLowerCase().includes(searchLower) ||
-                                      (item.subcategory && item.subcategory.toLowerCase().includes(searchLower)) ||
-                                      hasKeywordMatch;
+                // Busca ampla englobando os novos campos separados
+                const allText = `${item.name} ${item.characteristics || ''} ${item.diagnosis || ''} ${item.treatment || ''} ${item.popularNames || ''} ${item.subcategory || ''} ${CATEGORIES[item.type]?.label || ''}`.toLowerCase();
                 
+                const matchesSearch = searchLower === '' || allText.includes(searchLower) || hasKeywordMatch;
                 return matchesCategory && matchesSearch;
             });
         }
@@ -566,7 +539,7 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 const matchesSubcategory = currentSubcategory === 'all' || 
                                            (item.subcategory && item.subcategory.trim() === currentSubcategory);
                 return matchesSubcategory;
-            }).sort((a, b) => b.id.localeCompare(a.id)); 
+            }).sort((a, b) => b.id ? b.id.localeCompare(a.id) : 0); 
         }
 
         function renderSubcategoryFilters() {
@@ -634,7 +607,9 @@ Descrição: Posologia: 1 cp VO 12/12h.
                 const cat = CATEGORIES[item.type] || CATEGORIES['other'];
                 const badgeColorClass = CATEGORY_COLORS[cat.color];
                 
-                // Fallback icon logic if no image
+                // Extrai um resumo rápido para o card (prioridade para diagnóstico, senão características)
+                const resumoText = item.diagnosis || item.characteristics || item.treatment || item.description || '';
+
                 let mediaHTML = '';
                 if (item.imageUrl && item.imageUrl.trim() !== '') {
                     mediaHTML = `
@@ -642,35 +617,19 @@ Descrição: Posologia: 1 cp VO 12/12h.
                             <img src="${item.imageUrl}" alt="${item.name}" onerror="this.onerror=null; this.src='https://placehold.co/400x200/f1f5f9/94a3b8?text=Sem+Imagem';" class="w-full h-full object-cover transition-transform duration-500 hover:scale-105">
                         </div>`;
                 } else {
-                    // Clinical pattern based on category
-                    const patternColors = {
-                        'template': 'from-blue-50 to-blue-100 text-blue-300',
-                        'drug': 'from-emerald-50 to-emerald-100 text-emerald-300',
-                        'term': 'from-purple-50 to-purple-100 text-purple-300',
-                        'exam': 'from-amber-50 to-amber-100 text-amber-300',
-                        'disease': 'from-rose-50 to-rose-100 text-rose-300',
-                        'other': 'from-slate-50 to-slate-100 text-slate-300'
-                    };
+                    const patternColors = { 'template': 'from-blue-50 to-blue-100 text-blue-300', 'drug': 'from-emerald-50 to-emerald-100 text-emerald-300', 'term': 'from-purple-50 to-purple-100 text-purple-300', 'exam': 'from-amber-50 to-amber-100 text-amber-300', 'disease': 'from-rose-50 to-rose-100 text-rose-300', 'other': 'from-slate-50 to-slate-100 text-slate-300' };
                     const pt = patternColors[item.type] || patternColors['other'];
-                    
                     mediaHTML = `
                         <div class="h-20 w-full overflow-hidden border-b border-slate-100 bg-gradient-to-br ${pt} flex items-center justify-center">
                              <i class="ph ${cat.icon} text-4xl opacity-50"></i>
                         </div>`;
                 }
 
-                // Show primary action based on type
                 const primaryAction = item.type === 'template' || item.type === 'drug'
-                    ? `<button onclick="copyItemText('${item.id}', event)" class="bg-clinical-50 hover:bg-clinical-100 text-clinical-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-clinical-100 hover:border-clinical-200">
-                         <i class="ph ph-copy"></i> Copiar
-                       </button>`
-                    : `<button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-slate-200">
-                         <i class="ph ph-eye"></i> Visualizar
-                       </button>`;
+                    ? `<button onclick="copyItemText('${item.id}', event)" class="bg-clinical-50 hover:bg-clinical-100 text-clinical-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-clinical-100 hover:border-clinical-200"><i class="ph ph-copy"></i> Copiar</button>`
+                    : `<button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 flex-1 transition-colors border border-slate-200"><i class="ph ph-eye"></i> Visualizar</button>`;
 
-                const subcatHTML = item.subcategory 
-                    ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border bg-slate-50 text-slate-500 border-slate-200"><i class="ph ph-tag"></i> ${item.subcategory}</span>` 
-                    : '';
+                const subcatHTML = item.subcategory ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border bg-slate-50 text-slate-500 border-slate-200"><i class="ph ph-tag"></i> ${item.subcategory}</span>` : '';
 
                 return `
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden cursor-pointer group relative" onclick="viewItem('${item.id}')">
@@ -680,20 +639,15 @@ Descrição: Posologia: 1 cp VO 12/12h.
                         ${mediaHTML}
                         <div class="p-5 flex-1 flex flex-col">
                             <div class="mb-3 flex flex-wrap gap-2 items-center">
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${badgeColorClass}">
-                                    <i class="ph ${cat.icon}"></i> ${cat.label}
-                                </span>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${badgeColorClass}"><i class="ph ${cat.icon}"></i> ${cat.label}</span>
                                 ${subcatHTML}
                             </div>
                             <h3 class="font-bold text-slate-800 text-lg mb-2 leading-tight group-hover:text-clinical-600 transition-colors">${item.name}</h3>
-                            <p class="text-sm text-slate-500 line-clamp-3 mb-4 flex-1 whitespace-pre-wrap font-mono text-xs">${item.description}</p>
+                            <p class="text-sm text-slate-500 line-clamp-3 mb-4 flex-1 whitespace-pre-wrap font-mono text-xs">${resumoText}</p>
                             
                             <div class="flex gap-2 mt-auto pt-4 border-t border-slate-50" onclick="event.stopPropagation()">
                                 ${primaryAction}
-                                ${item.type === 'template' || item.type === 'drug' ? `
-                                <button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-colors border border-slate-200" title="Visualizar">
-                                    <i class="ph ph-arrows-out-simple"></i>
-                                </button>` : ''}
+                                ${item.type === 'template' || item.type === 'drug' ? `<button onclick="viewItem('${item.id}')" class="bg-slate-50 hover:bg-slate-100 text-slate-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center justify-center transition-colors border border-slate-200" title="Visualizar"><i class="ph ph-arrows-out-simple"></i></button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -702,71 +656,34 @@ Descrição: Posologia: 1 cp VO 12/12h.
         }
 
         function filterCategory(category) {
-            currentFilter = category;
-            currentSubcategory = 'all'; // Reseta o filtro de subcategoria ao trocar de categoria principal
-            
-            // Update Title
-            const titles = {
-                'all': 'Todos os Itens',
-                'template': 'Modelos de Anamnese',
-                'drug': 'Fármacos e Medicamentos',
-                'term': 'Termos Médicos',
-                'exam': 'Exame Físico',
-                'disease': 'Doenças',
-                'other': 'Outros Cadastros'
-            };
+            currentFilter = category; currentSubcategory = 'all'; 
+            const titles = { 'all': 'Todos os Itens', 'template': 'Modelos de Anamnese', 'drug': 'Fármacos e Medicamentos', 'term': 'Termos Médicos', 'exam': 'Exame Físico', 'disease': 'Doenças', 'other': 'Outros Cadastros' };
             document.getElementById('current-category-title').textContent = titles[category];
 
-            // Update Desktop Nav UI
             document.querySelectorAll('.nav-btn').forEach(btn => {
-                if (btn.dataset.category === category) {
-                    btn.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium bg-clinical-50 text-clinical-700 transition-colors';
-                } else {
-                    btn.className = 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors';
-                }
+                btn.className = btn.dataset.category === category 
+                    ? 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium bg-clinical-50 text-clinical-700 transition-colors' 
+                    : 'nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left font-medium text-slate-600 hover:bg-slate-50 transition-colors';
             });
-
-            // Update Mobile Nav UI
             document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
-                if (btn.dataset.category === category) {
-                    btn.className = 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-clinical-100 text-clinical-700 transition-colors';
-                } else {
-                    btn.className = 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors';
-                }
+                btn.className = btn.dataset.category === category 
+                    ? 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium bg-clinical-100 text-clinical-700 transition-colors' 
+                    : 'mobile-nav-btn whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium text-slate-600 bg-slate-100 transition-colors';
             });
-
             renderItems();
-            // Scroll top slightly smooth
             document.getElementById('main-scroll-area').scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        function handleSearch() {
-            currentSearch = document.getElementById('searchInput').value;
-            renderItems();
-        }
+        function handleSearch() { currentSearch = document.getElementById('searchInput').value; renderItems(); }
 
         function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const backdrop = document.getElementById('modalBackdrop');
-            
-            // Show backdrop
-            backdrop.classList.remove('hidden');
-            // Trigger reflow
-            void backdrop.offsetWidth;
-            backdrop.classList.remove('opacity-0');
-            
-            // Show modal
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            // Trigger reflow
-            void modal.offsetWidth;
-            modal.classList.remove('opacity-0', 'translate-y-4');
-            modal.classList.add('opacity-100', 'translate-y-0');
-
+            const modal = document.getElementById(modalId); const backdrop = document.getElementById('modalBackdrop');
+            backdrop.classList.remove('hidden'); void backdrop.offsetWidth; backdrop.classList.remove('opacity-0');
+            modal.classList.remove('hidden'); modal.classList.add('flex'); void modal.offsetWidth;
+            modal.classList.remove('opacity-0', 'translate-y-4'); modal.classList.add('opacity-100', 'translate-y-0');
             document.body.classList.add('modal-open');
 
             if (modalId === 'addModal' && !editingItemId) {
-                // Reseta título se for novo item
                 document.getElementById('addModalTitle').innerHTML = '<i class="ph ph-plus-circle text-clinical-600"></i> Criar Novo Item';
                 document.getElementById('submitBtnText').innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Item';
                 document.getElementById('addItemForm').reset();
@@ -777,118 +694,72 @@ Descrição: Posologia: 1 cp VO 12/12h.
         }
 
         function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const backdrop = document.getElementById('modalBackdrop');
-            
-            // Hide modal visually
-            modal.classList.remove('opacity-100', 'translate-y-0');
-            modal.classList.add('opacity-0', 'translate-y-4');
-            
-            // Wait for transition to finish before hiding display
+            const modal = document.getElementById(modalId); const backdrop = document.getElementById('modalBackdrop');
+            modal.classList.remove('opacity-100', 'translate-y-0'); modal.classList.add('opacity-0', 'translate-y-4');
             setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-                
-                // Only hide backdrop if no other modal is open
+                modal.classList.add('hidden'); modal.classList.remove('flex');
                 if (document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)').length === 0) {
                      backdrop.classList.add('opacity-0');
-                     setTimeout(() => {
-                         backdrop.classList.add('hidden');
-                     }, 300);
+                     setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
                      document.body.classList.remove('modal-open');
                 }
-                
-                if (modalId === 'addModal') {
-                    document.getElementById('addItemForm').reset();
-                    editingItemId = null; // Reset edição
-                }
-                if (modalId === 'viewModal') {
-                    currentViewedItem = null;
-                }
+                if (modalId === 'addModal') { document.getElementById('addItemForm').reset(); editingItemId = null; }
+                if (modalId === 'viewModal') currentViewedItem = null;
             }, 300);
         }
 
-        // Funções da Importação
-        function startManualCreation() {
-            closeModal('chooseActionModal');
-            setTimeout(() => {
-                openModal('addModal');
-            }, 300);
-        }
-
-        function startImportProcess() {
-            closeModal('chooseActionModal');
-            setTimeout(() => {
-                document.getElementById('importTextarea').value = '';
-                openModal('importModal');
-            }, 300);
-        }
+        function startManualCreation() { closeModal('chooseActionModal'); setTimeout(() => { openModal('addModal'); }, 300); }
+        function startImportProcess() { closeModal('chooseActionModal'); setTimeout(() => { document.getElementById('importTextarea').value = ''; openModal('importModal'); }, 300); }
 
         function processImport() {
             const text = document.getElementById('importTextarea').value;
-            if (!text.trim()) {
-                showToast('Por favor, cole o texto para importar.', 'error');
-                return;
-            }
+            if (!text.trim()) { showToast('Por favor, cole o texto para importar.', 'error'); return; }
 
             const blocks = text.split('===').filter(b => b.trim() !== '');
             let importedCount = 0;
 
-            const catMap = {
-                'anamnese': 'template', 'modelo': 'template', 'modelos': 'template', 'template': 'template',
-                'farmaco': 'drug', 'fármaco': 'drug', 'remedio': 'drug', 'remédio': 'drug', 'medicamento': 'drug', 'drug': 'drug',
-                'termo': 'term', 'termos': 'term', 'termo médico': 'term', 'termo medico': 'term', 'term': 'term',
-                'exame': 'exam', 'exame físico': 'exam', 'exame fisico': 'exam', 'exam': 'exam',
-                'doenca': 'disease', 'doença': 'disease', 'doenças': 'disease', 'disease': 'disease',
-                'outro': 'other', 'outros': 'other', 'other': 'other'
-            };
+            const catMap = { 'anamnese': 'template', 'modelo': 'template', 'modelos': 'template', 'template': 'template', 'farmaco': 'drug', 'fármaco': 'drug', 'remedio': 'drug', 'remédio': 'drug', 'medicamento': 'drug', 'drug': 'drug', 'termo': 'term', 'termos': 'term', 'termo médico': 'term', 'termo medico': 'term', 'term': 'term', 'exame': 'exam', 'exame físico': 'exam', 'exame fisico': 'exam', 'exam': 'exam', 'doenca': 'disease', 'doença': 'disease', 'doenças': 'disease', 'disease': 'disease', 'outro': 'other', 'outros': 'other', 'other': 'other' };
 
             blocks.forEach(block => {
-                const nomeMatch = block.match(/Nome:\s*(.*)/i);
-                if (!nomeMatch || !nomeMatch[1].trim()) return;
-
-                const nome = nomeMatch[1].trim();
-                const catMatch = block.match(/Categoria:\s*(.*)/i);
-                const subcatMatch = block.match(/Subcategoria:\s*(.*)/i);
-                const imgMatch = block.match(/Imagem:\s*(.*)/i);
-                const tagsMatch = block.match(/Tags:\s*(.*)/i);
-                const descIndex = block.toLowerCase().indexOf('descrição:');
-
-                let tipo = 'other';
-                if (catMatch && catMatch[1]) {
-                    const parsedCat = catMatch[1].trim().toLowerCase();
-                    tipo = catMap[parsedCat] || 'other';
-                }
-
-                const subcategoria = subcatMatch && subcatMatch[1] ? subcatMatch[1].trim() : '';
-                const imagem = imgMatch && imgMatch[1] ? imgMatch[1].trim() : '';
-                const tags = tagsMatch && tagsMatch[1] ? tagsMatch[1].trim() : '';
-                const keywordsArray = tags ? tags.split(',').map(k => k.trim()).filter(k => k !== '') : [];
+                const getMatch = (regex) => { const m = block.match(regex); return m ? m[1].trim() : ''; };
                 
-                let descricao = '';
-                if (descIndex !== -1) {
-                    descricao = block.substring(descIndex + 10).trim();
-                    descricao = descricao.replace(/^[\r\n]+/, ''); // Remove quebras vazias no início
-                }
+                const nome = getMatch(/Nome:\s*(.*)/i);
+                if (!nome) return;
 
-                items.unshift({
-                    id: 'item_' + Date.now() + Math.random().toString(36).substr(2, 5),
+                const rawCat = getMatch(/Categoria:\s*(.*)/i).toLowerCase();
+                const tipo = catMap[rawCat] || 'other';
+
+                // Usando Regex aprimorada para blocos de texto grandes
+                const charMatch = block.match(/Características:\s*([\s\S]*?)(?=Diagnóstico|Sintomas|Tratamento|===|$)/i);
+                const diagMatch = block.match(/(?:Diagnóstico|Sintomas)[^:]*:\s*([\s\S]*?)(?=Tratamento|===|$)/i);
+                const treatMatch = block.match(/Tratamentos?:\s*([\s\S]*?)(?===|$)/i);
+                
+                // Fallback para o modelo antigo ("Descrição:")
+                let legacyDesc = '';
+                const descMatch = block.match(/Descrição:\s*([\s\S]*?)(?===|$)/i);
+                if(descMatch && !charMatch && !diagMatch && !treatMatch) legacyDesc = descMatch[1].trim();
+
+                const tags = getMatch(/Tags:\s*(.*)/i);
+                
+                const itemData = {
                     type: tipo,
-                    subcategory: subcategoria,
+                    subcategory: getMatch(/Subcategoria:\s*(.*)/i),
                     name: nome,
-                    description: descricao,
-                    imageUrl: imagem,
-                    keywords: keywordsArray
-                });
+                    popularNames: getMatch(/Nomes Populares:\s*(.*)/i),
+                    characteristics: charMatch ? charMatch[1].trim() : legacyDesc,
+                    diagnosis: diagMatch ? diagMatch[1].trim() : '',
+                    treatment: treatMatch ? treatMatch[1].trim() : '',
+                    imageUrl: getMatch(/Imagem:\s*(.*)/i),
+                    keywords: tags ? tags.split(',').map(k => k.trim()).filter(k => k) : []
+                };
+
+                saveItem(itemData, false);
                 importedCount++;
             });
 
             if (importedCount > 0) {
-                saveData();
-                renderItems();
                 closeModal('importModal');
-                showToast(`${importedCount} itens importados com sucesso!`, 'success');
-                filterCategory(currentFilter); // Re-aplica filtro para atualizar lista
+                filterCategory(currentFilter);
             } else {
                 showToast('Formato inválido. Siga o modelo estruturado com ===.', 'error');
             }
@@ -896,79 +767,44 @@ Descrição: Posologia: 1 cp VO 12/12h.
 
         function handleFormSubmit(e) {
             e.preventDefault();
-            
-            const category = document.getElementById('itemCategory').value;
-            const subcategory = document.getElementById('itemSubcategory').value;
-            const name = document.getElementById('itemName').value;
-            const description = document.getElementById('itemDescription').value;
-            const imageUrl = document.getElementById('itemImageUrl').value;
             const keywordsRaw = document.getElementById('itemKeywords').value;
-
-            if (!category || !name || !description) {
-                showToast("Preencha os campos obrigatórios.", "error");
-                return;
-            }
-
-            const keywordsArray = keywordsRaw 
-                ? keywordsRaw.split(',').map(k => k.trim()).filter(k => k !== '')
-                : [];
-
-            if (editingItemId) {
-                // Atualizar item existente
-                const index = items.findIndex(i => i.id === editingItemId);
-                if (index > -1) {
-                    items[index] = {
-                        ...items[index],
-                        type: category,
-                        subcategory: subcategory,
-                        name: name,
-                        description: description,
-                        imageUrl: imageUrl || '',
-                        keywords: keywordsArray
-                    };
-                    showToast("Item atualizado com sucesso!", "success");
-                }
-                editingItemId = null;
-            } else {
-                // Criar novo item
-                const newItem = {
-                    id: 'item_' + Date.now(),
-                    type: category,
-                    subcategory: subcategory,
-                    name: name,
-                    description: description,
-                    imageUrl: imageUrl || '',
-                    keywords: keywordsArray
-                };
-                items.unshift(newItem); // Adiciona ao topo
-                showToast("Item salvo com sucesso!", "success");
-            }
-
-            saveData();
-            renderItems();
-            closeModal('addModal');
             
-            // Re-apply filter
+            const itemData = {
+                type: document.getElementById('itemCategory').value,
+                subcategory: document.getElementById('itemSubcategory').value,
+                name: document.getElementById('itemName').value,
+                popularNames: document.getElementById('itemPopularNames').value,
+                characteristics: document.getElementById('itemCharacteristics').value,
+                diagnosis: document.getElementById('itemDiagnosis').value,
+                treatment: document.getElementById('itemTreatment').value,
+                imageUrl: document.getElementById('itemImageUrl').value,
+                keywords: keywordsRaw ? keywordsRaw.split(',').map(k => k.trim()).filter(k => k) : []
+            };
+
+            if (!itemData.type || !itemData.name) {
+                showToast("Preencha os campos obrigatórios.", "error"); return;
+            }
+
+            saveItem(itemData, !!editingItemId, editingItemId);
+            closeModal('addModal');
             filterCategory(currentFilter);
         }
 
         function editItem(id, event) {
-            if (event) event.stopPropagation(); // Evita abrir o modo leitura ao clicar no botão
-            
-            const item = items.find(i => i.id === id);
-            if (!item) return;
+            if (event) event.stopPropagation(); 
+            const item = items.find(i => i.id === id); if (!item) return;
 
             editingItemId = id;
-            
-            // Preenche o formulário com os dados
             document.getElementById('itemCategory').value = item.type;
             document.getElementById('itemSubcategory').value = item.subcategory || '';
             document.getElementById('itemName').value = item.name;
+            document.getElementById('itemPopularNames').value = item.popularNames || '';
+            document.getElementById('itemCharacteristics').value = item.characteristics || item.description || '';
+            document.getElementById('itemDiagnosis').value = item.diagnosis || '';
+            document.getElementById('itemTreatment').value = item.treatment || '';
             document.getElementById('itemKeywords').value = item.keywords ? item.keywords.join(', ') : '';
-            document.getElementById('itemDescription').value = item.description;
             document.getElementById('itemImageUrl').value = item.imageUrl || '';
 
-            // Atualiza UI do modal de edição
             document.getElementById('addModalTitle').innerHTML = '<i class="ph ph-pencil-simple text-clinical-600"></i> Editar Item';
             document.getElementById('submitBtnText').innerHTML = '<i class="ph ph-floppy-disk"></i> Salvar Alterações';
 
@@ -979,222 +815,156 @@ Descrição: Posologia: 1 cp VO 12/12h.
             if (currentViewedItem) {
                 const id = currentViewedItem.id;
                 closeModal('viewModal');
-                // Aguarda a animação do modal de visualização fechar antes de abrir a edição
-                setTimeout(() => {
-                    editItem(id);
-                }, 300);
+                setTimeout(() => { editItem(id); }, 300);
             }
         }
 
         function viewItem(id) {
-            const item = items.find(i => i.id === id);
-            if (!item) return;
+            const item = items.find(i => i.id === id); if (!item) return;
 
             currentViewedItem = item;
             const cat = CATEGORIES[item.type] || CATEGORIES['other'];
-            const badgeColorClass = CATEGORY_COLORS[cat.color];
             const badgeHTML = `<i class="ph ${cat.icon}"></i> ${cat.label}`;
 
-            // Reset view state
-            document.getElementById('viewImageContainer').classList.add('hidden');
-            document.getElementById('viewHeaderNoImg').classList.remove('hidden');
-            document.getElementById('actionBtnsImg').classList.add('hidden');
+            const imgContainer = document.getElementById('viewImageContainer');
+            const imgEl = document.getElementById('viewImage');
 
-            const viewSubcategoryBadge = document.getElementById('viewSubcategoryBadge');
-            const viewSubcategoryBadgeImg = document.getElementById('viewSubcategoryBadgeImg');
-
+            // Gerencia Imagem
             if (item.imageUrl && item.imageUrl.trim() !== '') {
-                // Setup layout with image
-                document.getElementById('viewImageContainer').classList.remove('hidden');
-                document.getElementById('viewHeaderNoImg').classList.add('hidden');
-                document.getElementById('actionBtnsImg').classList.remove('hidden');
-                
-                const imgEl = document.getElementById('viewImage');
+                imgContainer.classList.remove('bg-slate-800');
+                imgContainer.classList.add('bg-black');
                 imgEl.src = item.imageUrl;
+                imgEl.classList.remove('hidden');
                 imgEl.onerror = () => { imgEl.src = 'https://placehold.co/800x400/f1f5f9/94a3b8?text=Sem+Imagem'; };
-                
-                document.getElementById('viewTitleImg').textContent = item.name;
-                const badgeImg = document.getElementById('viewCategoryBadgeImg');
-                badgeImg.innerHTML = badgeHTML;
-
-                if(item.subcategory) {
-                    viewSubcategoryBadgeImg.innerHTML = `<i class="ph ph-tag"></i> ${item.subcategory}`;
-                    viewSubcategoryBadgeImg.classList.remove('hidden');
-                    viewSubcategoryBadgeImg.classList.add('inline-flex');
-                } else {
-                    viewSubcategoryBadgeImg.classList.add('hidden');
-                    viewSubcategoryBadgeImg.classList.remove('inline-flex');
-                }
-
             } else {
-                // Setup layout without image
-                document.getElementById('viewTitle').textContent = item.name;
-                const badge = document.getElementById('viewCategoryBadge');
-                badge.className = `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold mb-2 border ${badgeColorClass}`;
-                badge.innerHTML = badgeHTML;
-
-                if(item.subcategory) {
-                    viewSubcategoryBadge.innerHTML = `<i class="ph ph-tag"></i> ${item.subcategory}`;
-                    viewSubcategoryBadge.classList.remove('hidden');
-                    viewSubcategoryBadge.classList.add('inline-flex');
-                } else {
-                    viewSubcategoryBadge.classList.add('hidden');
-                    viewSubcategoryBadge.classList.remove('inline-flex');
-                }
+                imgEl.src = '';
+                imgEl.classList.add('hidden'); // Oculta imagem, deixa só fundo
+                imgContainer.classList.add('bg-slate-800');
+                imgContainer.classList.remove('bg-black');
             }
 
-            // Exibir Palavras-chave
-            const kwContainer = document.getElementById('viewKeywords');
-            if (item.keywords && item.keywords.length > 0) {
-                kwContainer.innerHTML = item.keywords.map(k => `<span class="bg-clinical-50 text-clinical-600 px-2.5 py-1 rounded-md text-xs font-medium border border-clinical-100">#${k}</span>`).join('');
-                kwContainer.classList.remove('hidden');
-            } else {
-                kwContainer.classList.add('hidden');
-            }
+            document.getElementById('viewTitle').textContent = item.name;
+            document.getElementById('viewCategoryBadge').innerHTML = badgeHTML;
 
-            document.getElementById('viewDescription').textContent = item.description;
+            const viewSub = document.getElementById('viewSubcategoryBadge');
+            if(item.subcategory) { viewSub.innerHTML = `<i class="ph ph-tag"></i> ${item.subcategory}`; viewSub.classList.remove('hidden'); viewSub.classList.add('inline-flex'); } 
+            else { viewSub.classList.add('hidden'); viewSub.classList.remove('inline-flex'); }
+
+            const viewPop = document.getElementById('viewPopularNames');
+            if(item.popularNames) { viewPop.innerHTML = `<i class="ph ph-users"></i> Populares: ${item.popularNames}`; viewPop.classList.remove('hidden'); } 
+            else { viewPop.classList.add('hidden'); }
+
+            // Construir Seções Dinâmicas de Texto
+            let contentHtml = '';
             
-            // Setup delete button
-            const deleteBtn = document.getElementById('deleteBtn');
-            deleteBtn.onclick = () => deleteItem(item.id);
+            // Suporte para dados legados (criados antes da separação dos campos)
+            const legacyDesc = item.description && !item.characteristics ? item.description : null;
+
+            if(item.characteristics || legacyDesc) {
+                contentHtml += `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-clinical-500"></div>
+                    <h4 class="text-xs font-bold text-clinical-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="ph-fill ph-info"></i> Fisiopatologia / Características</h4>
+                    <pre class="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed font-normal">${item.characteristics || legacyDesc}</pre>
+                </div>`;
+            }
+            if(item.diagnosis) {
+                contentHtml += `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
+                    <h4 class="text-xs font-bold text-amber-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="ph-fill ph-magnifying-glass"></i> Diagnóstico e Sintomas</h4>
+                    <pre class="whitespace-pre-wrap font-sans text-sm text-slate-700 leading-relaxed font-normal">${item.diagnosis}</pre>
+                </div>`;
+            }
+            if(item.treatment) {
+                contentHtml += `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+                    <h4 class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"><i class="ph-fill ph-pill"></i> Manejo e Tratamento</h4>
+                    <pre class="whitespace-pre-wrap font-mono text-sm text-slate-700 leading-relaxed font-normal bg-slate-50 p-3 rounded-xl border border-slate-100">${item.treatment}</pre>
+                </div>`;
+            }
+
+            if(item.keywords && item.keywords.length > 0) {
+                contentHtml += `<div class="flex flex-wrap gap-2 pt-2">${item.keywords.map(k => `<span class="bg-slate-200 text-slate-600 px-2.5 py-1 rounded-md text-xs font-medium border border-slate-300">#${k}</span>`).join('')}</div>`;
+            }
+
+            document.getElementById('viewContentSections').innerHTML = contentHtml;
+            document.getElementById('deleteBtn').onclick = async () => {
+                if (confirm("Tem certeza que deseja excluir? Esta ação excluirá de TODOS os dispositivos.")) {
+                    if (useFirebase) {
+                        await db.collection("medquick_items").doc(item.id).delete();
+                        showToast("Item excluído da nuvem.", "success");
+                    } else {
+                        items = items.filter(i => i.id !== item.id);
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+                        showToast("Item excluído localmente.", "success");
+                        renderItems();
+                    }
+                    closeModal('viewModal');
+                }
+            };
 
             openModal('viewModal');
         }
 
-        function deleteItem(id) {
-            // Confirm explicitly via standard window confirm for simplicity & stability here
-            if (confirm("Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.")) {
-                const itemIndex = items.findIndex(i => i.id === id);
-                if (itemIndex > -1) {
-                    items.splice(itemIndex, 1);
-                    saveData();
-                    renderItems();
-                    closeModal('viewModal');
-                    showToast("Item excluído com sucesso.", "success");
-                }
-            }
-        }
-
         function copyItemText(id, event) {
-            if (event) event.stopPropagation(); // Prevent opening modal if clicked on card button
-            
+            if (event) event.stopPropagation(); 
             const item = items.find(i => i.id === id);
             if (item) {
-                fallbackCopyTextToClipboard(item.description);
+                let fullText = `[${item.name.toUpperCase()}]\n\n`;
+                if(item.characteristics || item.description) fullText += `-- CARACTERÍSTICAS --\n${item.characteristics || item.description}\n\n`;
+                if(item.diagnosis) fullText += `-- DIAGNÓSTICO/CLÍNICA --\n${item.diagnosis}\n\n`;
+                if(item.treatment) fullText += `-- TRATAMENTO --\n${item.treatment}\n`;
+                fallbackCopyTextToClipboard(fullText.trim());
             }
         }
 
         function copyCurrentViewText() {
             if (currentViewedItem) {
-                fallbackCopyTextToClipboard(currentViewedItem.description);
-                // Visual feedback in modal
-                const copyBtns = document.querySelectorAll('#viewModal button i.ph-copy');
-                copyBtns.forEach(icon => {
-                    icon.classList.remove('ph-copy');
-                    icon.classList.add('ph-check', 'text-emerald-500');
-                    setTimeout(() => {
-                        icon.classList.remove('ph-check', 'text-emerald-500');
-                        icon.classList.add('ph-copy');
-                    }, 2000);
-                });
+                copyItemText(currentViewedItem.id);
+                const btn = document.querySelector('#viewModal button .ph-copy').parentElement;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<i class="ph ph-check text-lg"></i> Copiado!`;
+                btn.classList.replace('bg-clinical-600', 'bg-emerald-600');
+                btn.classList.replace('hover:bg-clinical-700', 'hover:bg-emerald-700');
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.replace('bg-emerald-600', 'bg-clinical-600');
+                    btn.classList.replace('hover:bg-emerald-700', 'hover:bg-clinical-700');
+                }, 2000);
             }
         }
 
-        // Robust copy function avoiding navigator.clipboard restrictions in iframes
         function fallbackCopyTextToClipboard(text) {
             var textArea = document.createElement("textarea");
-            textArea.style.position = 'fixed';
-            textArea.style.top = 0;
-            textArea.style.left = 0;
-            textArea.style.width = '2em';
-            textArea.style.height = '2em';
-            textArea.style.padding = 0;
-            textArea.style.border = 'none';
-            textArea.style.outline = 'none';
-            textArea.style.boxShadow = 'none';
-            textArea.style.background = 'transparent';
-            textArea.value = text;
-
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-
-            try {
-                var successful = document.execCommand('copy');
-                if (successful) {
-                    showToast("Texto copiado para a área de transferência!", "success");
-                } else {
-                    showToast("Não foi possível copiar o texto automaticamente.", "error");
-                }
-            } catch (err) {
-                console.error('Fallback: Oops, unable to copy', err);
-                showToast("Erro ao copiar. Seu navegador pode bloquear esta ação.", "error");
-            }
-
+            textArea.style.position = 'fixed'; textArea.style.top = 0; textArea.style.left = 0;
+            textArea.style.width = '2em'; textArea.style.height = '2em'; textArea.style.padding = 0;
+            textArea.style.border = 'none'; textArea.style.outline = 'none'; textArea.style.boxShadow = 'none';
+            textArea.style.background = 'transparent'; textArea.value = text;
+            document.body.appendChild(textArea); textArea.focus(); textArea.select();
+            try { document.execCommand('copy'); showToast("Texto copiado para o prontuário!", "success"); } 
+            catch (err) { showToast("Erro ao copiar. Seu navegador pode bloquear esta ação.", "error"); }
             document.body.removeChild(textArea);
         }
 
-        // Custom Toast Notification System
         function showToast(message, type = 'info') {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            
-            // Define colors
-            let bgClass = 'bg-slate-800 text-white';
-            let icon = 'ph-info';
-            
-            if (type === 'success') {
-                bgClass = 'bg-emerald-600 text-white';
-                icon = 'ph-check-circle';
-            } else if (type === 'error') {
-                bgClass = 'bg-red-600 text-white';
-                icon = 'ph-warning-circle';
-            }
+            let bgClass = type === 'success' ? 'bg-emerald-600 text-white' : (type === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white');
+            let icon = type === 'success' ? 'ph-check-circle' : (type === 'error' ? 'ph-warning-circle' : 'ph-info');
 
             toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl transform transition-all duration-300 translate-y-10 opacity-0 ${bgClass} pointer-events-auto`;
-            toast.innerHTML = `
-                <i class="ph ${icon} text-xl"></i>
-                <span class="font-medium text-sm">${message}</span>
-            `;
-
+            toast.innerHTML = `<i class="ph ${icon} text-xl"></i><span class="font-medium text-sm">${message}</span>`;
             container.appendChild(toast);
-
-            // Animate in
-            setTimeout(() => {
-                toast.classList.remove('translate-y-10', 'opacity-0');
-            }, 10);
-
-            // Animate out and remove
-            setTimeout(() => {
-                toast.classList.add('translate-y-10', 'opacity-0');
-                setTimeout(() => {
-                    if (container.contains(toast)) {
-                        container.removeChild(toast);
-                    }
-                }, 300);
-            }, 3000);
+            setTimeout(() => toast.classList.remove('translate-y-10', 'opacity-0'), 10);
+            setTimeout(() => { toast.classList.add('translate-y-10', 'opacity-0'); setTimeout(() => { if (container.contains(toast)) container.removeChild(toast); }, 300); }, 3000);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             initApp();
-            
-            // Close modals on escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const openModals = document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)');
-                    openModals.forEach(modal => {
-                        closeModal(modal.id);
-                    });
-                }
-            });
-
-            // Close modal when clicking on backdrop
-            document.getElementById('modalBackdrop').addEventListener('click', () => {
-                const openModals = document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)');
-                openModals.forEach(modal => {
-                    closeModal(modal.id);
-                });
-            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)').forEach(modal => closeModal(modal.id)); });
+            document.getElementById('modalBackdrop').addEventListener('click', () => { document.querySelectorAll('.fixed.inset-0.flex:not(.hidden)').forEach(modal => closeModal(modal.id)); });
         });
 
     </script>
